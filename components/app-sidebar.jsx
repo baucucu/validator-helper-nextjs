@@ -122,7 +122,7 @@ export function AppSidebar() {
     return (
         <ShadcnAppSidebar>
             <SidebarHeader>
-                <Link href="/dashboard?view=dashboard" onClick={() => setCurrentView('dashboard')} className="flex items-center gap-2 text-lg font-bold">
+                <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold">
                     <Users className="h-6 w-6" />
                     Validator
                 </Link>
@@ -130,14 +130,6 @@ export function AppSidebar() {
             <Separator />
             <SidebarContent>
                 <SidebarMenu>
-                    {/* Dashboard link always visible at the top */}
-                    <SidebarMenuButton asChild>
-                        <Link href="/dashboard?view=dashboard" onClick={() => setCurrentView('dashboard')}>
-                            <Users className="h-4 w-4" />
-                            Dashboard
-                        </Link>
-                    </SidebarMenuButton>
-
                     {/* Recent Runs Section */}
                     <SidebarGroup>
                         <SidebarGroupLabel>Recent Runs</SidebarGroupLabel>

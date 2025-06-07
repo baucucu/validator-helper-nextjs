@@ -21,7 +21,6 @@ export default function DashboardPage() {
     const campaignId = searchParams.get('campaignId');
 
     let mainContent = null;
-    let addButtonText = '';
 
     switch (view) {
         case 'dashboard':
@@ -29,13 +28,8 @@ export default function DashboardPage() {
                 <div className="flex flex-1 flex-col gap-4 p-4">
                     <h1>Welcome to your Dashboard!</h1>
                     <p>Select an option from the sidebar.</p>
-                    {/* Original sign out functionality, can be moved to a client component */}
-                    {/* <form>
-                        <button type="submit" className="mt-4 p-2 bg-red-500 text-white rounded">Sign Out (Placeholder)</button>
-                    </form> */}
                 </div>
             );
-            addButtonText = 'Add New Something'; // Or hide button for dashboard view
             break;
         case 'clients':
             mainContent = (
@@ -44,7 +38,6 @@ export default function DashboardPage() {
                     <p>List of all clients will appear here.</p>
                 </div>
             );
-            addButtonText = 'Add New Client';
             break;
         case 'client_campaigns':
             mainContent = (
@@ -53,7 +46,6 @@ export default function DashboardPage() {
                     <p>List of campaigns for the selected client will appear here.</p>
                 </div>
             );
-            addButtonText = 'Add New Campaign';
             break;
         case 'campaign_runs':
             mainContent = (
@@ -62,7 +54,6 @@ export default function DashboardPage() {
                     <p>List of runs for the selected campaign will appear here.</p>
                 </div>
             );
-            addButtonText = 'Add New Run';
             break;
         default:
             mainContent = (
@@ -71,7 +62,6 @@ export default function DashboardPage() {
                     <p>The requested page could not be found.</p>
                 </div>
             );
-            addButtonText = ''; // Hide button for unknown views
     }
 
     return (
@@ -100,12 +90,10 @@ export default function DashboardPage() {
                             <Search className="h-4 w-4" />
                         </Button>
 
-                        {view !== 'dashboard' && view !== 'default' && (
-                            <Button variant="outline" className="gap-1">
-                                <Plus className="h-4 w-4" />
-                                {addButtonText}
-                            </Button>
-                        )}
+                        <Button variant="outline" className="gap-1">
+                            <Plus className="h-4 w-4" />
+                            Add New Item
+                        </Button>
                     </div>
                 </header>
                 {mainContent}
