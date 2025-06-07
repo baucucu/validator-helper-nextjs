@@ -160,7 +160,7 @@ export default function DashboardPage() {
                     <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
                     <h1 className="text-lg font-semibold md:text-xl">{pageTitle}</h1>
                     <div className="ml-auto flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                        <Button variant="outline" size="icon" onClick={() => {
                             console.log("Search button clicked!");
                             const keyboardEvent = new KeyboardEvent('keydown', {
                                 key: 'k',
