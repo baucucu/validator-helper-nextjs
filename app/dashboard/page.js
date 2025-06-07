@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/ui/breadcrumb"
 import { AppSidebar } from "@/components/app-sidebar"
 import { useSearchParams } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Plus, Search } from 'lucide-react';
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
@@ -19,6 +21,7 @@ export default function DashboardPage() {
     const campaignId = searchParams.get('campaignId');
 
     let mainContent = null;
+    let addButtonText = '';
 
     switch (view) {
         case 'dashboard':
@@ -32,6 +35,7 @@ export default function DashboardPage() {
                     </form> */}
                 </div>
             );
+            addButtonText = 'Add New Something'; // Or hide button for dashboard view
             break;
         case 'clients':
             mainContent = (
@@ -40,6 +44,7 @@ export default function DashboardPage() {
                     <p>List of all clients will appear here.</p>
                 </div>
             );
+            addButtonText = 'Add New Client';
             break;
         case 'client_campaigns':
             mainContent = (
@@ -48,6 +53,7 @@ export default function DashboardPage() {
                     <p>List of campaigns for the selected client will appear here.</p>
                 </div>
             );
+            addButtonText = 'Add New Campaign';
             break;
         case 'campaign_runs':
             mainContent = (
@@ -56,6 +62,7 @@ export default function DashboardPage() {
                     <p>List of runs for the selected campaign will appear here.</p>
                 </div>
             );
+            addButtonText = 'Add New Run';
             break;
         default:
             mainContent = (
@@ -64,6 +71,7 @@ export default function DashboardPage() {
                     <p>The requested page could not be found.</p>
                 </div>
             );
+            addButtonText = ''; // Hide button for unknown views
     }
 
     return (
@@ -86,6 +94,19 @@ export default function DashboardPage() {
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
+                    <div className="ml-auto flex items-center gap-2">
+                        {/* Search Icon Placeholder */}
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Search className="h-4 w-4" />
+                        </Button>
+
+                        {view !== 'dashboard' && view !== 'default' && (
+                            <Button variant="outline" className="gap-1">
+                                <Plus className="h-4 w-4" />
+                                {addButtonText}
+                            </Button>
+                        )}
+                    </div>
                 </header>
                 {mainContent}
             </SidebarInset>

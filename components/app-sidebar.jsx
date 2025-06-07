@@ -12,7 +12,7 @@ import {
     SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Settings, Users, Layers, Play, ChevronLeft, Plus } from "lucide-react"
+import { Settings, Users, Layers, Play, ChevronLeft, Plus, Search } from "lucide-react"
 import Link from "next/link"
 
 // Dummy data for demonstration
@@ -24,45 +24,54 @@ const dummyClients = [
 
 const dummyCampaigns = {
     client1: [
-        { id: 'campaign1_1', name: 'Summer Sale 2024' },
-        { id: 'campaign1_2', name: 'Winter Campaign' },
+        { id: 'campaign1_1', name: 'Summer Sale 2024', clientId: 'client1' },
+        { id: 'campaign1_2', name: 'Winter Campaign', clientId: 'client1' },
     ],
     client2: [
-        { id: 'campaign2_1', name: 'New Product Launch' },
+        { id: 'campaign2_1', name: 'New Product Launch', clientId: 'client2' },
     ],
     client3: [
-        { id: 'campaign3_1', name: 'Q3 Marketing' },
-        { id: 'campaign3_2', name: 'Holiday Special' },
-        { id: 'campaign3_3', name: 'Spring Promo' },
+        { id: 'campaign3_1', name: 'Q3 Marketing', clientId: 'client3' },
+        { id: 'campaign3_2', name: 'Holiday Special', clientId: 'client3' },
+        { id: 'campaign3_3', name: 'Spring Promo', clientId: 'client3' },
     ],
 };
 
 const dummyRuns = {
     campaign1_1: [
-        { id: 'run1_1_1', name: 'Email Blast 1' },
-        { id: 'run1_1_2', name: 'Social Media Push' },
+        { id: 'run1_1_1', name: 'Email Blast 1', campaignId: 'campaign1_1' },
+        { id: 'run1_1_2', name: 'Social Media Push', campaignId: 'campaign1_1' },
     ],
     campaign1_2: [
-        { id: 'run1_2_1', name: 'Retargeting Ad' },
+        { id: 'run1_2_1', name: 'Retargeting Ad', campaignId: 'campaign1_2' },
     ],
     campaign2_1: [
-        { id: 'run2_1_1', name: 'Press Release' },
-        { id: 'run2_1_2', name: 'Influencer Outreach' },
+        { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
+        { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'campaign2_1' },
     ],
     campaign3_1: [
-        { id: 'run3_1_1', name: 'SEO Audit' },
+        { id: 'run3_1_1', name: 'SEO Audit', campaignId: 'campaign3_1' },
     ],
     campaign3_2: [
-        { id: 'run3_2_1', name: 'TV Commercial' },
-        { id: 'run3_2_2', name: 'Radio Ad' },
+        { id: 'run3_2_1', name: 'TV Commercial', campaignId: 'campaign3_2' },
+        { id: 'run3_2_2', name: 'Radio Ad', campaignId: 'campaign3_2' },
     ],
     campaign3_3: [
-        { id: 'run3_3_1', name: 'Online Banners' },
+        { id: 'run3_3_1', name: 'Online Banners', campaignId: 'campaign3_3' },
     ],
 };
 
+// Dummy recent runs (last 5 updated)
+const dummyRecentRuns = [
+    { id: 'run1_1_2', name: 'Social Media Push', campaignId: 'campaign1_1' },
+    { id: 'run3_2_1', name: 'TV Commercial', campaignId: 'campaign3_2' },
+    { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
+    { id: 'run1_2_1', name: 'Retargeting Ad', campaignId: 'campaign1_2' },
+    { id: 'run3_3_1', name: 'Online Banners', campaignId: 'campaign3_3' },
+];
+
 export function AppSidebar() {
-    const [currentView, setCurrentView] = React.useState('dashboard'); // 'dashboard', 'clients', 'client_campaigns', 'campaign_runs'
+    const [currentView, setCurrentView] = React.useState('clients'); // Default to clients view
     const [selectedClient, setSelectedClient] = React.useState(null);
     const [selectedCampaign, setSelectedCampaign] = React.useState(null);
 
@@ -87,10 +96,19 @@ export function AppSidebar() {
         setCurrentView('client_campaigns');
     };
 
-    const handleGoToClients = () => {
-        setSelectedClient(null);
-        setSelectedCampaign(null);
-        setCurrentView('clients');
+    const handleRunClick = (run) => {
+        // Find the campaign and client associated with this run
+        let foundCampaign = null;
+        for (const clientId in dummyCampaigns) {
+            foundCampaign = dummyCampaigns[clientId].find(c => c.id === run.campaignId);
+            if (foundCampaign) {
+                const foundClient = dummyClients.find(client => client.id === foundCampaign.clientId);
+                setSelectedClient(foundClient);
+                setSelectedCampaign(foundCampaign);
+                setCurrentView('campaign_runs');
+                break;
+            }
+        }
     };
 
     const getCampaignsForClient = (clientId) => {
@@ -104,48 +122,47 @@ export function AppSidebar() {
     return (
         <ShadcnAppSidebar>
             <SidebarHeader>
-                <Link href="/dashboard" onClick={() => setCurrentView('dashboard')} className="text-lg font-bold">
-                    My App
+                <Link href="/dashboard?view=dashboard" onClick={() => setCurrentView('dashboard')} className="flex items-center gap-2 text-lg font-bold">
+                    <Users className="h-6 w-6" />
+                    Validator
                 </Link>
             </SidebarHeader>
             <Separator />
             <SidebarContent>
                 <SidebarMenu>
-                    {currentView === 'dashboard' && (
-                        <>
-                            <SidebarMenuButton asChild>
-                                <Link href="/dashboard?view=dashboard">
-                                    <Users className="h-4 w-4" />
-                                    Dashboard
-                                </Link>
-                            </SidebarMenuButton>
+                    {/* Dashboard link always visible at the top */}
+                    <SidebarMenuButton asChild>
+                        <Link href="/dashboard?view=dashboard" onClick={() => setCurrentView('dashboard')}>
+                            <Users className="h-4 w-4" />
+                            Dashboard
+                        </Link>
+                    </SidebarMenuButton>
 
-                            <SidebarMenuButton asChild>
-                                <Link href="/dashboard?view=clients" onClick={() => setCurrentView('clients')}>
-                                    <Users className="h-4 w-4" />
-                                    Clients
+                    {/* Recent Runs Section */}
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Recent Runs</SidebarGroupLabel>
+                        {dummyRecentRuns.map(run => (
+                            <SidebarMenuButton asChild key={run.id}>
+                                <Link href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`} onClick={() => handleRunClick(run)}>
+                                    <Play className="h-4 w-4" />
+                                    {run.name}
                                 </Link>
                             </SidebarMenuButton>
-                        </>
-                    )}
+                        ))}
+                    </SidebarGroup>
+                    <Separator />
 
                     {currentView === 'clients' && (
-                        <>
-                            <SidebarMenuButton>
-                                <Plus className="h-4 w-4" />
-                                Add Client
-                            </SidebarMenuButton>
-                            <SidebarGroup>
-                                <SidebarGroupLabel>All Clients</SidebarGroupLabel>
-                                {dummyClients.map(client => (
-                                    <SidebarMenuButton asChild key={client.id}>
-                                        <Link href={`/dashboard?view=client_campaigns&clientId=${client.id}`} onClick={() => handleClientClick(client)}>
-                                            {client.name}
-                                        </Link>
-                                    </SidebarMenuButton>
-                                ))}
-                            </SidebarGroup>
-                        </>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>All Clients</SidebarGroupLabel>
+                            {dummyClients.map(client => (
+                                <SidebarMenuButton asChild key={client.id}>
+                                    <Link href={`/dashboard?view=client_campaigns&clientId=${client.id}`} onClick={() => handleClientClick(client)}>
+                                        {client.name}
+                                    </Link>
+                                </SidebarMenuButton>
+                            ))}
+                        </SidebarGroup>
                     )}
 
                     {currentView === 'client_campaigns' && selectedClient && (
@@ -158,10 +175,6 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                             <SidebarGroup>
                                 <SidebarGroupLabel>{selectedClient.name} Campaigns</SidebarGroupLabel>
-                                <SidebarMenuButton>
-                                    <Plus className="h-4 w-4" />
-                                    Add Campaign
-                                </SidebarMenuButton>
                                 {getCampaignsForClient(selectedClient.id).map(campaign => (
                                     <SidebarMenuButton asChild key={campaign.id}>
                                         <Link href={`/dashboard?view=campaign_runs&campaignId=${campaign.id}`} onClick={() => handleCampaignClick(campaign)}>
@@ -185,7 +198,7 @@ export function AppSidebar() {
                                 <SidebarGroupLabel>{selectedCampaign.name} Runs</SidebarGroupLabel>
                                 {getRunsForCampaign(selectedCampaign.id).map(run => (
                                     <SidebarMenuButton key={run.id} asChild>
-                                        <Link href={`/dashboard?view=campaign_runs&campaignId=${run.id}`}>
+                                        <Link href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}>
                                             {run.name}
                                         </Link>
                                     </SidebarMenuButton>
