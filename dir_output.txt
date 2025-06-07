@@ -1,0 +1,20 @@
+
+    Directory: D:\proiecte\cursor\validator-helper-sh\validator-helper-nextjs
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d--h-          07-06-2025 03:05 PM                .git
+d----          07-06-2025 03:04 PM                .next
+d----          07-06-2025 02:59 PM                app
+d----          07-06-2025 03:00 PM                node_modules
+d----          07-06-2025 02:59 PM                public
+-a---          07-06-2025 02:59 PM            480 .gitignore
+-a---          07-06-2025 03:13 PM              0 dir_output.txt
+-a---          07-06-2025 02:59 PM            369 eslint.config.mjs
+-a---          07-06-2025 02:59 PM             73 jsconfig.json
+-a---          07-06-2025 02:59 PM             92 next.config.mjs
+-a---          07-06-2025 03:00 PM         210914 package-lock.json
+-a---          07-06-2025 02:59 PM            473 package.json
+-a---          07-06-2025 02:59 PM             81 postcss.config.mjs
+-a---          07-06-2025 02:59 PM           1458 README.md
+
