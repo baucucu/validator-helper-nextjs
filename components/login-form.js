@@ -18,7 +18,7 @@ const loginSchema = z.object({
     password: z.string().min(4, { message: "Password must be at least 4 characters" }),
 })
 
-export default function LoginForm() {
+export default function LoginForm({ signInAction }) {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState(null)
     const [showPassword, setShowPassword] = useState(false)
@@ -36,20 +36,17 @@ export default function LoginForm() {
         setIsLoading(true)
         setError(null)
 
-        try {
-            // This is where you would typically make an API call to authenticate
-            // For demo purposes, we'll simulate a successful login after a delay
-            await new Promise((resolve) => setTimeout(resolve, 1500))
+        const formData = new FormData()
+        formData.append("email", data.email)
+        formData.append("password", data.password)
 
-            // Simulate successful login
-            console.log("Login successful", data)
-            router.push("/dashboard") // Redirect to dashboard after login
-        } catch (err) {
-            setError("Invalid email or password. Please try again.")
-            console.error(err)
-        } finally {
-            setIsLoading(false)
+        const result = await signInAction(formData)
+
+        if (result && result.error) {
+            setError(result.error)
         }
+
+        setIsLoading(false)
     }
 
     return (
@@ -76,7 +73,7 @@ export default function LoginForm() {
                 </CardHeader>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <CardContent className="space-y-4">
-                        {error && (
+                        {!isLoading && error && (
                             <Alert variant="destructive">
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
