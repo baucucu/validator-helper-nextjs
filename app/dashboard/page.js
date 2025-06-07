@@ -13,6 +13,12 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // Dummy data for mapping IDs to names
 const dummyClients = [
@@ -157,10 +163,19 @@ export default function DashboardPage() {
                             <Search className="h-4 w-4" />
                         </Button>
 
-                        <Button variant="outline" size="icon" className="md:h-9 md:px-4 md:py-2 md:gap-1">
-                            <Plus className="h-4 w-4" />
-                            <span className="hidden md:inline">Add New Item</span>
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" className="md:h-9 md:px-4 md:py-2 md:gap-1">
+                                    <Plus className="h-4 w-4" />
+                                    <span className="hidden md:inline">Add New Item</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem>Client</DropdownMenuItem>
+                                <DropdownMenuItem>Campaign</DropdownMenuItem>
+                                <DropdownMenuItem>Run</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </header>
                 {mainContent}
