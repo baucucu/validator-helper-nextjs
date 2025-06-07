@@ -19,6 +19,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useSearchDialog } from "@/components/search-dialog-context";
 
 // Dummy data for mapping IDs to names
 const dummyClients = [
@@ -68,6 +69,7 @@ const dummyRuns = {
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
+    const { setOpen: setSearchDialogOpen } = useSearchDialog();
     const view = searchParams.get('view') || 'dashboard';
     const clientId = searchParams.get('clientId');
     const campaignId = searchParams.get('campaignId');
@@ -158,8 +160,15 @@ export default function DashboardPage() {
                     <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
                     <h1 className="text-lg font-semibold md:text-xl">{pageTitle}</h1>
                     <div className="ml-auto flex items-center gap-2">
-                        {/* Search Icon Placeholder */}
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                            console.log("Search button clicked!");
+                            const keyboardEvent = new KeyboardEvent('keydown', {
+                                key: 'k',
+                                ctrlKey: true,
+                                bubbles: true
+                            });
+                            document.dispatchEvent(keyboardEvent);
+                        }}>
                             <Search className="h-4 w-4" />
                         </Button>
 
