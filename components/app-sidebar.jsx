@@ -104,38 +104,33 @@ export function AppSidebar() {
     return (
         <ShadcnAppSidebar>
             <SidebarHeader>
-                <p className="text-lg font-bold">My App</p>
+                <Link href="/dashboard" onClick={() => setCurrentView('dashboard')} className="text-lg font-bold">
+                    My App
+                </Link>
             </SidebarHeader>
             <Separator />
             <SidebarContent>
                 <SidebarMenu>
                     {currentView === 'dashboard' && (
-                        <SidebarMenuButton asChild>
-                            <Link href="/dashboard?view=dashboard">
-                                <Users className="h-4 w-4" />
-                                Dashboard
-                            </Link>
-                        </SidebarMenuButton>
-                    )}
+                        <>
+                            <SidebarMenuButton asChild>
+                                <Link href="/dashboard?view=dashboard">
+                                    <Users className="h-4 w-4" />
+                                    Dashboard
+                                </Link>
+                            </SidebarMenuButton>
 
-                    {/* Clients link from dashboard view */}
-                    {currentView === 'dashboard' && (
-                        <SidebarMenuButton asChild>
-                            <Link href="/dashboard?view=clients" onClick={handleGoToClients}>
-                                <Users className="h-4 w-4" />
-                                Clients
-                            </Link>
-                        </SidebarMenuButton>
+                            <SidebarMenuButton asChild>
+                                <Link href="/dashboard?view=clients" onClick={() => setCurrentView('clients')}>
+                                    <Users className="h-4 w-4" />
+                                    Clients
+                                </Link>
+                            </SidebarMenuButton>
+                        </>
                     )}
 
                     {currentView === 'clients' && (
                         <>
-                            <SidebarMenuButton asChild>
-                                <Link href="/dashboard?view=dashboard">
-                                    <ChevronLeft className="h-4 w-4" />
-                                    Back to Dashboard
-                                </Link>
-                            </SidebarMenuButton>
                             <SidebarMenuButton>
                                 <Plus className="h-4 w-4" />
                                 Add Client
