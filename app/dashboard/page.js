@@ -165,9 +165,8 @@ export default function DashboardPage() {
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="md:h-9 md:px-4 md:py-2 md:gap-1">
+                                <Button variant="outline" size="icon">
                                     <Plus className="h-4 w-4" />
-                                    <span className="hidden md:inline">Add New Item</span>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

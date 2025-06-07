@@ -203,7 +203,7 @@ export function AppSidebar() {
 
     return (
         <ShadcnAppSidebar>
-            <SidebarHeader>
+            <SidebarHeader className="h-16">
                 <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold">
                     <Users className="h-6 w-6" />
                     Validator
