@@ -49,7 +49,7 @@ const dummyRuns = {
     ],
     campaign2_1: [
         { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
-        { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'run2_1_2' },
+        { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'campaign2_1' },
     ],
     campaign3_1: [
         { id: 'run3_1_1', name: 'SEO Audit', campaignId: 'campaign3_1' },
@@ -70,6 +70,7 @@ const dummyRecentRuns = [
     { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
     { id: 'run1_2_1', name: 'Retargeting Ad', campaignId: 'campaign1_2' },
     { id: 'run3_3_1', name: 'Online Banners', campaignId: 'campaign3_3' },
+    { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'campaign2_1' },
 ];
 
 export function AppSidebar() {
