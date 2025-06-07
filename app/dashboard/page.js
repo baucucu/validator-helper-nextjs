@@ -160,7 +160,7 @@ export default function DashboardPage() {
                     <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
                     <h1 className="text-lg font-semibold md:text-xl">{pageTitle}</h1>
                     <div className="ml-auto flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={() => {
+                        <Button variant="outline" size="icon" className="md:size-9" onClick={() => {
                             console.log("Search button clicked!");
                             const keyboardEvent = new KeyboardEvent('keydown', {
                                 key: 'k',
@@ -174,7 +174,7 @@ export default function DashboardPage() {
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
+                                <Button variant="outline" size="icon" className="md:size-9">
                                     <Plus className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
