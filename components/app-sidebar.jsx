@@ -14,6 +14,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Settings, Users, Layers, Play, ChevronLeft, Plus, Search } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from 'next/navigation';
+import { cn } from '@/lib/utils'; // Assuming cn utility for conditional classnames
 
 // Dummy data for demonstration
 const dummyClients = [
@@ -47,7 +49,7 @@ const dummyRuns = {
     ],
     campaign2_1: [
         { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
-        { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'campaign2_1' },
+        { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'run2_1_2' },
     ],
     campaign3_1: [
         { id: 'run3_1_1', name: 'SEO Audit', campaignId: 'campaign3_1' },
@@ -71,45 +73,79 @@ const dummyRecentRuns = [
 ];
 
 export function AppSidebar() {
-    const [currentView, setCurrentView] = React.useState('clients'); // Default to clients view
-    const [selectedClient, setSelectedClient] = React.useState(null);
-    const [selectedCampaign, setSelectedCampaign] = React.useState(null);
+    const searchParams = useSearchParams();
+    const urlView = searchParams.get('view') || 'dashboard';
+    const urlClientId = searchParams.get('clientId');
+    const urlCampaignId = searchParams.get('campaignId');
+    const urlRunId = searchParams.get('runId');
 
-    const handleClientClick = (client) => {
-        setSelectedClient(client);
-        setCurrentView('client_campaigns');
-    };
+    // Derive currentView, selectedClient, and selectedCampaign directly from URL
+    const currentView = React.useMemo(() => {
+        if (urlRunId) return 'campaign_runs';
+        if (urlCampaignId) return 'campaign_runs'; // Campaign view also shows runs
+        if (urlClientId) return 'client_campaigns';
+        if (urlView === 'clients') return 'clients';
+        return 'clients'; // Default to clients view if no specific view is in URL
+    }, [urlView, urlClientId, urlCampaignId, urlRunId]);
 
-    const handleCampaignClick = (campaign) => {
-        setSelectedCampaign(campaign);
-        setCurrentView('campaign_runs');
-    };
-
-    const handleBackToClients = () => {
-        setSelectedClient(null);
-        setSelectedCampaign(null);
-        setCurrentView('clients');
-    };
-
-    const handleBackToCampaigns = () => {
-        setSelectedCampaign(null);
-        setCurrentView('client_campaigns');
-    };
-
-    const handleRunClick = (run) => {
-        // Find the campaign and client associated with this run
-        let foundCampaign = null;
-        for (const clientId in dummyCampaigns) {
-            foundCampaign = dummyCampaigns[clientId].find(c => c.id === run.campaignId);
-            if (foundCampaign) {
-                const foundClient = dummyClients.find(client => client.id === foundCampaign.clientId);
-                setSelectedClient(foundClient);
-                setSelectedCampaign(foundCampaign);
-                setCurrentView('campaign_runs');
-                break;
+    const selectedClient = React.useMemo(() => {
+        if (urlClientId) {
+            return dummyClients.find(client => client.id === urlClientId);
+        } else if (urlCampaignId) {
+            for (const clientId in dummyCampaigns) {
+                const campaign = dummyCampaigns[clientId].find(c => c.id === urlCampaignId);
+                if (campaign) {
+                    return dummyClients.find(client => client.id === campaign.clientId);
+                }
+            }
+        } else if (urlRunId) {
+            let foundCampaign = null;
+            for (const campaignId in dummyRuns) {
+                const run = dummyRuns[campaignId].find(r => r.id === urlRunId);
+                if (run) {
+                    for (const cId in dummyCampaigns) {
+                        const campaign = dummyCampaigns[cId].find(camp => camp.id === run.campaignId);
+                        if (campaign) {
+                            return dummyClients.find(client => client.id === campaign.clientId);
+                        }
+                    }
+                }
             }
         }
-    };
+        return null;
+    }, [urlClientId, urlCampaignId, urlRunId]);
+
+    const selectedCampaign = React.useMemo(() => {
+        if (urlCampaignId) {
+            // Ensure the campaign belongs to the selectedClient if available
+            if (selectedClient) {
+                return dummyCampaigns[selectedClient.id]?.find(c => c.id === urlCampaignId);
+            } else {
+                // If selectedClient is not yet set (e.g., direct run link), try to find campaign globally
+                for (const clientId in dummyCampaigns) {
+                    const campaign = dummyCampaigns[clientId].find(c => c.id === urlCampaignId);
+                    if (campaign) return campaign;
+                }
+            }
+        } else if (urlRunId) {
+            for (const campaignId in dummyRuns) {
+                const run = dummyRuns[campaignId].find(r => r.id === urlRunId);
+                if (run) {
+                    // Ensure the campaign belongs to the selectedClient if available
+                    if (selectedClient) {
+                        return dummyCampaigns[selectedClient.id]?.find(c => c.id === run.campaignId);
+                    } else {
+                        // Fallback if selectedClient not ready: find campaign globally
+                        for (const cId in dummyCampaigns) {
+                            const campaign = dummyCampaigns[cId].find(camp => camp.id === run.campaignId);
+                            if (campaign) return campaign;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }, [urlCampaignId, urlRunId, selectedClient]); // Depend on selectedClient as well
 
     const getCampaignsForClient = (clientId) => {
         return dummyCampaigns[clientId] || [];
@@ -117,6 +153,51 @@ export function AppSidebar() {
 
     const getRunsForCampaign = (campaignId) => {
         return dummyRuns[campaignId] || [];
+    };
+
+    // Helper function to check if a link is active
+    const isActive = (targetView, targetClientId = undefined, targetCampaignId = undefined, targetRunId = undefined) => {
+        // Handle settings link separately (if it ever has complex params)
+        if (targetView === 'settings') {
+            return urlView === 'settings';
+        }
+
+        // Default dashboard/clients view (no specific IDs)
+        if (targetView === 'dashboard' && !targetClientId && !targetCampaignId && !targetRunId) {
+            return urlView === 'dashboard' && !urlClientId && !urlCampaignId && !urlRunId;
+        }
+        if (targetView === 'clients' && !targetClientId && !targetCampaignId && !targetRunId) {
+            return urlView === 'clients' && !urlClientId && !urlCampaignId && !urlRunId;
+        }
+
+        // Standard view comparison
+        if (urlView !== targetView) return false;
+
+        // Robust comparison for optional parameters
+        const compareParam = (targetParam, urlParam) => {
+            // Normalize URL param to undefined if it's null
+            const normalizedUrlParam = urlParam === null ? undefined : urlParam;
+
+            // If targetParam is undefined, it means this parameter is optional for the target link.
+            // In this case, we consider it a match regardless of what urlParam is.
+            if (targetParam === undefined) {
+                return true; // We don't care about this parameter for highlighting
+            }
+            // If targetParam is defined, it must strictly match the normalized URL param.
+            return targetParam === normalizedUrlParam;
+        };
+
+        const isMatch = compareParam(targetClientId, urlClientId) &&
+            compareParam(targetCampaignId, urlCampaignId) &&
+            compareParam(targetRunId, urlRunId);
+
+        return isMatch;
+    };
+
+    const getHighlightClass = (targetView, targetClientId = undefined, targetCampaignId = undefined, targetRunId = undefined) => {
+        return isActive(targetView, targetClientId, targetCampaignId, targetRunId)
+            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+            : '';
     };
 
     return (
@@ -135,7 +216,12 @@ export function AppSidebar() {
                         <SidebarGroupLabel>Recent Runs</SidebarGroupLabel>
                         {dummyRecentRuns.map(run => (
                             <SidebarMenuButton asChild key={run.id}>
-                                <Link href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`} onClick={() => handleRunClick(run)}>
+                                <Link
+                                    href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}
+                                    className={cn(
+                                        getHighlightClass('campaign_runs', undefined, run.campaignId, run.id),
+                                    )}
+                                >
                                     <Play className="h-4 w-4" />
                                     {run.name}
                                 </Link>
@@ -149,7 +235,12 @@ export function AppSidebar() {
                             <SidebarGroupLabel>All Clients</SidebarGroupLabel>
                             {dummyClients.map(client => (
                                 <SidebarMenuButton asChild key={client.id}>
-                                    <Link href={`/dashboard?view=client_campaigns&clientId=${client.id}`} onClick={() => handleClientClick(client)}>
+                                    <Link
+                                        href={`/dashboard?view=client_campaigns&clientId=${client.id}`}
+                                        className={cn(
+                                            getHighlightClass('client_campaigns', client.id, undefined, undefined),
+                                        )}
+                                    >
                                         {client.name}
                                     </Link>
                                 </SidebarMenuButton>
@@ -160,7 +251,12 @@ export function AppSidebar() {
                     {currentView === 'client_campaigns' && selectedClient && (
                         <>
                             <SidebarMenuButton asChild>
-                                <Link href="/dashboard?view=clients" onClick={handleBackToClients}>
+                                <Link
+                                    href="/dashboard?view=clients"
+                                    className={cn(
+                                        getHighlightClass('clients', undefined, undefined, undefined),
+                                    )}
+                                >
                                     <ChevronLeft className="h-4 w-4" />
                                     Back to Clients
                                 </Link>
@@ -169,7 +265,12 @@ export function AppSidebar() {
                                 <SidebarGroupLabel>{selectedClient.name} Campaigns</SidebarGroupLabel>
                                 {getCampaignsForClient(selectedClient.id).map(campaign => (
                                     <SidebarMenuButton asChild key={campaign.id}>
-                                        <Link href={`/dashboard?view=campaign_runs&campaignId=${campaign.id}`} onClick={() => handleCampaignClick(campaign)}>
+                                        <Link
+                                            href={`/dashboard?view=campaign_runs&campaignId=${campaign.id}`}
+                                            className={cn(
+                                                getHighlightClass('campaign_runs', undefined, campaign.id, undefined),
+                                            )}
+                                        >
                                             {campaign.name}
                                         </Link>
                                     </SidebarMenuButton>
@@ -181,7 +282,12 @@ export function AppSidebar() {
                     {currentView === 'campaign_runs' && selectedCampaign && (
                         <>
                             <SidebarMenuButton asChild>
-                                <Link href={`/dashboard?view=client_campaigns&clientId=${selectedClient.id}`} onClick={handleBackToCampaigns}>
+                                <Link
+                                    href={`/dashboard?view=client_campaigns&clientId=${selectedClient.id}`}
+                                    className={cn(
+                                        getHighlightClass('client_campaigns', selectedClient.id, undefined, undefined),
+                                    )}
+                                >
                                     <ChevronLeft className="h-4 w-4" />
                                     Back to Campaigns
                                 </Link>
@@ -190,7 +296,12 @@ export function AppSidebar() {
                                 <SidebarGroupLabel>{selectedCampaign.name} Runs</SidebarGroupLabel>
                                 {getRunsForCampaign(selectedCampaign.id).map(run => (
                                     <SidebarMenuButton key={run.id} asChild>
-                                        <Link href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}>
+                                        <Link
+                                            href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}
+                                            className={cn(
+                                                getHighlightClass('campaign_runs', undefined, run.campaignId, run.id),
+                                            )}
+                                        >
                                             {run.name}
                                         </Link>
                                     </SidebarMenuButton>
@@ -202,7 +313,12 @@ export function AppSidebar() {
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenuButton href="/settings" asChild>
-                    <Link href="/settings">
+                    <Link
+                        href="/settings"
+                        className={cn(
+                            getHighlightClass('settings'),
+                        )}
+                    >
                         <Settings className="h-4 w-4" />
                         Settings
                     </Link>
@@ -210,4 +326,4 @@ export function AppSidebar() {
             </SidebarFooter>
         </ShadcnAppSidebar>
     )
-} 
+}
