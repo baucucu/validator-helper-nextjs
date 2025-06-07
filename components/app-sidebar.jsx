@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Settings, Users, Layers, Play, ChevronLeft, Plus } from "lucide-react"
+import Link from "next/link"
 
 // Dummy data for demonstration
 const dummyClients = [
@@ -109,17 +110,31 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                     {currentView === 'dashboard' && (
-                        <SidebarMenuButton href="/dashboard">
-                            <Users className="h-4 w-4" />
-                            Dashboard
+                        <SidebarMenuButton asChild>
+                            <Link href="/dashboard?view=dashboard">
+                                <Users className="h-4 w-4" />
+                                Dashboard
+                            </Link>
+                        </SidebarMenuButton>
+                    )}
+
+                    {/* Clients link from dashboard view */}
+                    {currentView === 'dashboard' && (
+                        <SidebarMenuButton asChild>
+                            <Link href="/dashboard?view=clients" onClick={handleGoToClients}>
+                                <Users className="h-4 w-4" />
+                                Clients
+                            </Link>
                         </SidebarMenuButton>
                     )}
 
                     {currentView === 'clients' && (
                         <>
-                            <SidebarMenuButton onClick={handleGoToClients}>
-                                <Users className="h-4 w-4" />
-                                Clients
+                            <SidebarMenuButton asChild>
+                                <Link href="/dashboard?view=dashboard">
+                                    <ChevronLeft className="h-4 w-4" />
+                                    Back to Dashboard
+                                </Link>
                             </SidebarMenuButton>
                             <SidebarMenuButton>
                                 <Plus className="h-4 w-4" />
@@ -128,8 +143,10 @@ export function AppSidebar() {
                             <SidebarGroup>
                                 <SidebarGroupLabel>All Clients</SidebarGroupLabel>
                                 {dummyClients.map(client => (
-                                    <SidebarMenuButton key={client.id} onClick={() => handleClientClick(client)}>
-                                        {client.name}
+                                    <SidebarMenuButton asChild key={client.id}>
+                                        <Link href={`/dashboard?view=client_campaigns&clientId=${client.id}`} onClick={() => handleClientClick(client)}>
+                                            {client.name}
+                                        </Link>
                                     </SidebarMenuButton>
                                 ))}
                             </SidebarGroup>
@@ -138,9 +155,11 @@ export function AppSidebar() {
 
                     {currentView === 'client_campaigns' && selectedClient && (
                         <>
-                            <SidebarMenuButton onClick={handleBackToClients}>
-                                <ChevronLeft className="h-4 w-4" />
-                                Back to Clients
+                            <SidebarMenuButton asChild>
+                                <Link href="/dashboard?view=clients" onClick={handleBackToClients}>
+                                    <ChevronLeft className="h-4 w-4" />
+                                    Back to Clients
+                                </Link>
                             </SidebarMenuButton>
                             <SidebarGroup>
                                 <SidebarGroupLabel>{selectedClient.name} Campaigns</SidebarGroupLabel>
@@ -149,8 +168,10 @@ export function AppSidebar() {
                                     Add Campaign
                                 </SidebarMenuButton>
                                 {getCampaignsForClient(selectedClient.id).map(campaign => (
-                                    <SidebarMenuButton key={campaign.id} onClick={() => handleCampaignClick(campaign)}>
-                                        {campaign.name}
+                                    <SidebarMenuButton asChild key={campaign.id}>
+                                        <Link href={`/dashboard?view=campaign_runs&campaignId=${campaign.id}`} onClick={() => handleCampaignClick(campaign)}>
+                                            {campaign.name}
+                                        </Link>
                                     </SidebarMenuButton>
                                 ))}
                             </SidebarGroup>
@@ -159,15 +180,19 @@ export function AppSidebar() {
 
                     {currentView === 'campaign_runs' && selectedCampaign && (
                         <>
-                            <SidebarMenuButton onClick={handleBackToCampaigns}>
-                                <ChevronLeft className="h-4 w-4" />
-                                Back to Campaigns
+                            <SidebarMenuButton asChild>
+                                <Link href={`/dashboard?view=client_campaigns&clientId=${selectedClient.id}`} onClick={handleBackToCampaigns}>
+                                    <ChevronLeft className="h-4 w-4" />
+                                    Back to Campaigns
+                                </Link>
                             </SidebarMenuButton>
                             <SidebarGroup>
                                 <SidebarGroupLabel>{selectedCampaign.name} Runs</SidebarGroupLabel>
                                 {getRunsForCampaign(selectedCampaign.id).map(run => (
-                                    <SidebarMenuButton key={run.id}>
-                                        {run.name}
+                                    <SidebarMenuButton key={run.id} asChild>
+                                        <Link href={`/dashboard?view=campaign_runs&campaignId=${run.id}`}>
+                                            {run.name}
+                                        </Link>
                                     </SidebarMenuButton>
                                 ))}
                             </SidebarGroup>
@@ -176,9 +201,11 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarContent>
             <SidebarFooter>
-                <SidebarMenuButton href="/settings">
-                    <Settings className="h-4 w-4" />
-                    Settings
+                <SidebarMenuButton href="/settings" asChild>
+                    <Link href="/settings">
+                        <Settings className="h-4 w-4" />
+                        Settings
+                    </Link>
                 </SidebarMenuButton>
             </SidebarFooter>
         </ShadcnAppSidebar>

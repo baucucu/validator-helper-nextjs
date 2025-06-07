@@ -1,5 +1,7 @@
-import { createClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
+"use client"
+
+// import { createClient } from '@/utils/supabase/server'; // Removed as it's a server-side import
+// import { redirect } from 'next/navigation'; // Removed as it's not directly used here after async removal
 import {
     SidebarInset,
     SidebarProvider,
@@ -8,20 +10,60 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/ui/breadcrumb"
 import { AppSidebar } from "@/components/app-sidebar"
+import { useSearchParams } from 'next/navigation';
 
-export default async function DashboardPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+export default function DashboardPage() {
+    const searchParams = useSearchParams();
+    const view = searchParams.get('view') || 'dashboard';
+    const clientId = searchParams.get('clientId');
+    const campaignId = searchParams.get('campaignId');
 
-    if (!user) {
-        redirect('/login');
-    }
+    let mainContent = null;
 
-    async function signOut() {
-        'use server'
-        const supabase = await createClient();
-        await supabase.auth.signOut();
-        redirect('/login');
+    switch (view) {
+        case 'dashboard':
+            mainContent = (
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                    <h1>Welcome to your Dashboard!</h1>
+                    <p>Select an option from the sidebar.</p>
+                    {/* Original sign out functionality, can be moved to a client component */}
+                    {/* <form>
+                        <button type="submit" className="mt-4 p-2 bg-red-500 text-white rounded">Sign Out (Placeholder)</button>
+                    </form> */}
+                </div>
+            );
+            break;
+        case 'clients':
+            mainContent = (
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                    <h1>All Clients</h1>
+                    <p>List of all clients will appear here.</p>
+                </div>
+            );
+            break;
+        case 'client_campaigns':
+            mainContent = (
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                    <h1>Campaigns for Client: {clientId}</h1>
+                    <p>List of campaigns for the selected client will appear here.</p>
+                </div>
+            );
+            break;
+        case 'campaign_runs':
+            mainContent = (
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                    <h1>Runs for Campaign: {campaignId}</h1>
+                    <p>List of runs for the selected campaign will appear here.</p>
+                </div>
+            );
+            break;
+        default:
+            mainContent = (
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                    <h1>Page Not Found</h1>
+                    <p>The requested page could not be found.</p>
+                </div>
+            );
     }
 
     return (
@@ -40,18 +82,12 @@ export default async function DashboardPage() {
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="hidden md:block" />
                             <BreadcrumbItem>
-                                <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                                <BreadcrumbPage>{view.charAt(0).toUpperCase() + view.slice(1).replace('_', ' ')}</BreadcrumbPage>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
                 </header>
-                <div className="flex flex-1 flex-col gap-4 p-4">
-                    <h1>Welcome to your Dashboard, {user.email}!</h1>
-                    <form action={signOut}>
-                        <button type="submit">Sign Out</button>
-                    </form>
-                    {/* Future dashboard content will go here */}
-                </div>
+                {mainContent}
             </SidebarInset>
         </SidebarProvider>
     );
