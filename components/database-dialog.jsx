@@ -149,6 +149,8 @@ const DatabaseDialog = () => {
             setUploadedFile(null)
             setUploadError("")
             setCreatedRunId("")
+            setCsvHeaders([])
+            setFieldMappings({})
         } else {
             fetchClients() // Fetch clients when dialog opens
         }
@@ -267,7 +269,7 @@ const DatabaseDialog = () => {
         setIsLoading(false)
     }
 
-    // Update the handleFileUpload function to extract headers
+    // Update the handleFileUpload function to parse the CSV data into an array of objects
     const handleFileUpload = (event) => {
         const file = event.target.files?.[0]
         if (!file) return
@@ -303,13 +305,15 @@ const DatabaseDialog = () => {
             })
             setFieldMappings(initialMappings)
 
-            // Skip header row and parse data
-            const dataLines = lines.slice(1).filter((line) => line.trim())
-            const parsedRecords = dataLines.map((line, index) => {
-                const columns = line.split(",").map((col) => col.trim().replace(/"/g, ""))
-                return `Record ${index + 1}: ${columns.join(" | ")}`
-            })
-
+            // Skip header row and parse data into an array of objects
+            const parsedRecords = lines.slice(1).map((line) => {
+                const values = line.split(",").map((col) => col.trim().replace(/"/g, ""))
+                const rowData = {}
+                headers.forEach((header, index) => {
+                    rowData[header] = values[index]
+                })
+                return rowData
+            }).filter(row => Object.values(row).some(value => value !== "")); // Filter out empty rows
             setRecords(parsedRecords)
         }
 
@@ -333,7 +337,47 @@ const DatabaseDialog = () => {
     }
 
     // Add a function to handle mapping submission
-    const handleSubmitMapping = () => {
+    const handleSubmitMapping = async () => {
+        setIsLoading(true)
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+            console.error("Error getting user:", userError)
+            setIsLoading(false)
+            return
+        }
+
+        const userId = userData?.user?.id
+
+        if (!userId) {
+            console.error("User not logged in or user ID not found.")
+            setIsLoading(false)
+            return
+        }
+
+        const recordsToInsert = records.map((record) => {
+            const mappedData = {}
+            for (const csvHeader in fieldMappings) {
+                const dbField = fieldMappings[csvHeader]
+                if (dbField && record[csvHeader] !== undefined) {
+                    mappedData[dbField] = record[csvHeader]
+                }
+            }
+            return {
+                campaign_id: selectedCampaign,
+                user_id: userId,
+                data: mappedData,
+            }
+        })
+
+        const { error } = await supabase.from("records").insert(recordsToInsert)
+
+        if (error) {
+            console.error("Error inserting records:", error)
+            setIsLoading(false)
+            return
+        }
+
+        setIsLoading(false)
         setCurrentStep("run")
     }
 
@@ -460,6 +504,11 @@ const DatabaseDialog = () => {
             case "campaign":
                 return (
                     <>
+                        <div className="mb-4 flex flex-wrap gap-2">
+                            <Badge variant="outline" className="text-sm">
+                                Client: {selectedClientName}
+                            </Badge>
+                        </div>
                         <Tabs
                             defaultValue={isCreatingNew ? "create" : "select"}
                             onValueChange={(v) => setIsCreatingNew(v === "create")}
@@ -588,7 +637,7 @@ const DatabaseDialog = () => {
                                     <div className="max-h-[120px] overflow-y-auto space-y-1 bg-muted/50 p-2 rounded-md">
                                         {records.slice(0, 1).map((record, index) => (
                                             <div key={index} className="text-xs p-1 bg-background rounded border">
-                                                {record}
+                                                {JSON.stringify(record)}
                                             </div>
                                         ))}
                                         {records.length > 1 && (
