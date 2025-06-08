@@ -792,13 +792,11 @@ const DatabaseDialog = () => {
                     <div className="pr-2">{renderStepContent()}</div>
                 </div>
 
-                <DialogFooter className="flex items-center justify-between">
-                    {currentStep !== "client" && currentStep !== "complete" ? (
+                <DialogFooter className="flex  flex-row items-center justify-end space-x-2">
+                    {currentStep !== "client" && currentStep !== "complete" && (
                         <Button variant="outline" onClick={handleBack} disabled={isLoading}>
                             Back
                         </Button>
-                    ) : (
-                        <div></div>
                     )}
 
                     <Button

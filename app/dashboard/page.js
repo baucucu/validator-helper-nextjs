@@ -8,7 +8,6 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/ui/breadcrumb"
 import { AppSidebar } from "@/components/app-sidebar"
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -20,21 +19,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useSearchDialog } from "@/components/search-dialog-context";
-import { Dialog, DialogContent, DialogDescription } from "@/components/ui/dialog";
-import ClientForm from "@/components/client-form";
 import { useState, useEffect, useCallback } from 'react';
-import { DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { createClient } from "@/utils/supabase/client";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import CampaignForm from "@/components/campaign-form";
 import DatabaseDialog from "@/components/database-dialog";
 
 // Dummy data for mapping IDs to names
