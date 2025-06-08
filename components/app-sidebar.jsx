@@ -12,7 +12,7 @@ import {
     SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Settings, Users, Layers, Play, ChevronLeft, Plus, Search } from "lucide-react"
+import { Settings, Users, Layers, Play, ChevronLeft, Plus, Search, Store, Target } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils'; // Assuming cn utility for conditional classnames
@@ -242,6 +242,7 @@ export function AppSidebar() {
                                             getHighlightClass('client_campaigns', client.id, undefined, undefined),
                                         )}
                                     >
+                                        <Store className="h-4 w-4" />
                                         {client.name}
                                     </Link>
                                 </SidebarMenuButton>
@@ -272,6 +273,7 @@ export function AppSidebar() {
                                                 getHighlightClass('campaign_runs', undefined, campaign.id, undefined),
                                             )}
                                         >
+                                            <Target className="h-4 w-4" />
                                             {campaign.name}
                                         </Link>
                                     </SidebarMenuButton>
@@ -303,6 +305,7 @@ export function AppSidebar() {
                                                 getHighlightClass('campaign_runs', undefined, run.campaignId, run.id),
                                             )}
                                         >
+                                            <Play className="h-4 w-4" />
                                             {run.name}
                                         </Link>
                                     </SidebarMenuButton>
