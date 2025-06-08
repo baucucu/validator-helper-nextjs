@@ -234,21 +234,6 @@ export default function DashboardPage() {
                             <Search className="h-4 w-4" />
                         </Button>
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="md:size-9">
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={(e) => {
-                                    e.preventDefault(); // Prevent dropdown from closing immediately
-                                    // Open the DatabaseDialog directly
-                                    setIsAddDataDialogOpen(true);
-                                }}>Add Data</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
                         <DatabaseDialog open={isAddDataDialogOpen} onOpenChange={setIsAddDataDialogOpen} />
 
                     </div>

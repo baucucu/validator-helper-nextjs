@@ -3,7 +3,7 @@
 import React from "react"
 
 import { useState } from "react"
-import { Check, ChevronsUpDown, Loader2, X } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, X, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -74,19 +74,43 @@ const DatabaseDialog = () => {
     const [csvHeaders, setCsvHeaders] = useState([])
     const [fieldMappings, setFieldMappings] = useState({})
     const [availableFields] = useState([
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "company",
-        "jobTitle",
-        "address",
-        "city",
-        "state",
-        "zipCode",
-        "country",
-        "notes",
+        "First Name",
+        "Last Name",
+        "Email",
+        "Company Name",
+        "Job Title",
+        "LinkedIn Profile",
+        "Company Address",
+        "Company City",
+        "Company State",
+        "Company Zip Code",
+        "Company Country",
+        // New fields
+        "Phone Number",
+        "Website",
+        "Industry",
+        "Revenue",
+        "Employee Count",
+        "Notes",
+        "Status",
+        "Last Contact Date",
     ])
+
+    // Helper function for auto-mapping
+    const getAutoMappedField = (csvHeader) => {
+        const normalizedHeader = csvHeader.toLowerCase()
+        // Prioritize exact match
+        let matchedField = availableFields.find(
+            (field) => field.toLowerCase() === normalizedHeader,
+        )
+        // If no exact match, try partial match
+        if (!matchedField) {
+            matchedField = availableFields.find(
+                (field) => normalizedHeader.includes(field.toLowerCase()),
+            )
+        }
+        return matchedField || ""
+    }
 
     // Reset all state when dialog closes
     const handleOpenChange = (newOpen) => {
@@ -191,16 +215,7 @@ const DatabaseDialog = () => {
             const initialMappings = {}
             headers.forEach((header) => {
                 // Try to find a matching field name (case-insensitive)
-                const normalizedHeader = header.toLowerCase()
-                const matchedField = availableFields.find(
-                    (field) => field.toLowerCase() === normalizedHeader || normalizedHeader.includes(field.toLowerCase()),
-                )
-
-                if (matchedField) {
-                    initialMappings[header] = matchedField
-                } else {
-                    initialMappings[header] = "" // Empty string means unmapped
-                }
+                initialMappings[header] = getAutoMappedField(header)
             })
             setFieldMappings(initialMappings)
 
@@ -529,17 +544,7 @@ const DatabaseDialog = () => {
                                         // Auto-map based on name similarity
                                         const autoMappings = {}
                                         csvHeaders.forEach((header) => {
-                                            const normalizedHeader = header.toLowerCase()
-                                            const matchedField = availableFields.find(
-                                                (field) =>
-                                                    field.toLowerCase() === normalizedHeader || normalizedHeader.includes(field.toLowerCase()),
-                                            )
-
-                                            if (matchedField) {
-                                                autoMappings[header] = matchedField
-                                            } else {
-                                                autoMappings[header] = fieldMappings[header] || ""
-                                            }
+                                            autoMappings[header] = getAutoMappedField(header)
                                         })
                                         setFieldMappings(autoMappings)
                                     }}
@@ -771,7 +776,7 @@ const DatabaseDialog = () => {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button>Add Data</Button>
+                <Button variant="outline" size="icon" className="md:size-9"><Plus className="h-4 w-4" /></Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] max-h-[67vh] flex flex-col">
                 <DialogHeader>
