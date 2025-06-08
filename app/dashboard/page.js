@@ -20,7 +20,9 @@ export default function DashboardPage() {
     const { setOpen: setSearchDialogOpen } = useSearchDialog();
     const [isAddDataDialogOpen, setIsAddDataDialogOpen] = useState(false);
     const [clients, setClients] = useState([]);
-    const [campaigns, setCampaigns] = useState([]);
+    const [campaigns, setCampaigns] = useState({});
+    const [runs, setRuns] = useState({});
+    const [recentRuns, setRecentRuns] = useState([]);
 
     const supabase = createClient();
 
@@ -41,7 +43,42 @@ export default function DashboardPage() {
         if (campaignsError) {
             console.error("Error fetching campaigns:", campaignsError);
         }
-        setCampaigns(campaignsData || []);
+
+        // Group campaigns by client_id
+        const groupedCampaigns = (campaignsData || []).reduce((acc, campaign) => {
+            acc[campaign.client_id] = acc[campaign.client_id] || [];
+            acc[campaign.client_id].push(campaign);
+            return acc;
+        }, {});
+        setCampaigns(groupedCampaigns);
+
+        // Fetch runs
+        const { data: runsData, error: runsError } = await supabase
+            .from('runs')
+            .select('id, name, campaign_id, created_at');
+        if (runsError) {
+            console.error("Error fetching runs:", runsError);
+        }
+
+        // Group runs by campaign_id
+        const groupedRuns = (runsData || []).reduce((acc, run) => {
+            acc[run.campaign_id] = acc[run.campaign_id] || [];
+            acc[run.campaign_id].push(run);
+            return acc;
+        }, {});
+        setRuns(groupedRuns);
+
+        // Fetch recent runs (last 5, ordered by created_at)
+        const { data: recentRunsData, error: recentRunsError } = await supabase
+            .from('runs')
+            .select('id, name, campaign_id')
+            .order('created_at', { ascending: false })
+            .limit(5);
+        if (recentRunsError) {
+            console.error("Error fetching recent runs:", recentRunsError);
+        }
+        setRecentRuns(recentRunsData || []);
+
     }, [supabase]);
 
     useEffect(() => {
@@ -88,7 +125,16 @@ export default function DashboardPage() {
         case 'campaign_runs':
             let campaignName = 'Unknown Campaign';
             // Find campaign name
-            const selectedCampaign = campaigns.find(c => c.id === campaignId);
+            // Note: campaigns is now an object, so iterate through its values
+            let selectedCampaign = null;
+            for (const key in campaigns) {
+                const found = campaigns[key].find(c => c.id === campaignId);
+                if (found) {
+                    selectedCampaign = found;
+                    break;
+                }
+            }
+
             if (selectedCampaign) {
                 campaignName = selectedCampaign.name;
             }
@@ -96,7 +142,19 @@ export default function DashboardPage() {
 
             let runName = 'Unknown Run';
             if (runId) {
-                runName = 'Run details not available';
+                // Find run name
+                // Note: runs is now an object, so iterate through its values
+                let selectedRun = null;
+                for (const key in runs) {
+                    const found = runs[key].find(r => r.id === runId);
+                    if (found) {
+                        selectedRun = found;
+                        break;
+                    }
+                }
+                if (selectedRun) {
+                    runName = selectedRun.name;
+                }
                 pageTitle = runName;
             }
 
@@ -119,7 +177,7 @@ export default function DashboardPage() {
 
     return (
         <SidebarProvider>
-            <AppSidebar />
+            <AppSidebar clients={clients} campaigns={campaigns} runs={runs} recentRuns={recentRuns} />
             <SidebarInset>
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                     <SidebarTrigger className="-ml-1" />

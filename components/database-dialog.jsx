@@ -23,25 +23,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { createClient } from "@/utils/supabase/client"
 
 // Mock data
-const mockClients = [
-    { id: "1", name: "Acme Corp" },
-    { id: "2", name: "Globex Industries" },
-    { id: "3", name: "Stark Enterprises" },
-]
-
-const mockCampaigns = {
-    "1": [
-        { id: "101", name: "Q1 Marketing" },
-        { id: "102", name: "Summer Promotion" },
-    ],
-    "2": [
-        { id: "201", name: "Product Launch" },
-        { id: "202", name: "Brand Awareness" },
-    ],
-    "3": [{ id: "301", name: "Holiday Campaign" }],
-}
+// const mockCampaigns = {
+//     "1": [
+//         { id: "101", name: "Q1 Marketing" },
+//         { id: "102", name: "Summer Promotion" },
+//     ],
+//     "2": [
+//         { id: "201", name: "Product Launch" },
+//         { id: "202", name: "Brand Awareness" },
+//     ],
+//     "3": [{ id: "301", name: "Holiday Campaign" }],
+// }
 
 // First, update the Step type to include the new "mapping" step
 const DatabaseDialog = () => {
@@ -85,16 +80,38 @@ const DatabaseDialog = () => {
         "Company State",
         "Company Zip Code",
         "Company Country",
-        // New fields
-        "Phone Number",
-        "Website",
-        "Industry",
-        "Revenue",
-        "Employee Count",
-        "Notes",
-        "Status",
-        "Last Contact Date",
+
     ])
+
+    const [clients, setClients] = useState([]) // New state for clients
+    const supabase = createClient() // Initialize Supabase client
+
+    const [campaigns, setCampaigns] = useState({}) // New state for campaigns
+
+    // Fetch clients from Supabase
+    const fetchClients = async () => {
+        setIsLoading(true)
+        const { data, error } = await supabase.from("clients").select("id, name")
+        if (error) {
+            console.error("Error fetching clients:", error)
+        } else {
+            setClients(data || [])
+        }
+        setIsLoading(false)
+    }
+
+    // Fetch campaigns from Supabase
+    const fetchCampaigns = async (clientId) => {
+        if (!clientId) return
+        setIsLoading(true)
+        const { data, error } = await supabase.from("campaigns").select("id, name, client_id").eq("client_id", clientId)
+        if (error) {
+            console.error("Error fetching campaigns:", error)
+        } else {
+            setCampaigns((prev) => ({ ...prev, [clientId]: data || [] }))
+        }
+        setIsLoading(false)
+    }
 
     // Helper function for auto-mapping
     const getAutoMappedField = (csvHeader) => {
@@ -112,7 +129,6 @@ const DatabaseDialog = () => {
         return matchedField || ""
     }
 
-    // Reset all state when dialog closes
     const handleOpenChange = (newOpen) => {
         setOpen(newOpen)
         if (!newOpen) {
@@ -133,21 +149,24 @@ const DatabaseDialog = () => {
             setUploadedFile(null)
             setUploadError("")
             setCreatedRunId("")
+        } else {
+            fetchClients() // Fetch clients when dialog opens
         }
     }
 
     const handleClientSelect = (clientId) => {
-        const client = mockClients.find((c) => c.id === clientId)
+        const client = clients.find((c) => c.id === clientId) // Use clients state
         if (client) {
             setSelectedClient(clientId)
             setSelectedClientName(client.name)
             setIsCreatingNew(false)
+            fetchCampaigns(clientId) // Fetch campaigns for the selected client
         }
     }
 
     const handleCampaignSelect = (campaignId) => {
-        const campaigns = mockCampaigns[selectedClient] || []
-        const campaign = campaigns.find((c) => c.id === campaignId)
+        const clientCampaigns = campaigns[selectedClient] || [] // Use campaigns state
+        const campaign = clientCampaigns.find((c) => c.id === campaignId)
         if (campaign) {
             setSelectedCampaign(campaignId)
             setSelectedCampaignName(campaign.name)
@@ -155,32 +174,97 @@ const DatabaseDialog = () => {
         }
     }
 
-    const handleCreateClient = () => {
+    const handleCreateClient = async () => { // Make function async
         if (!newClientName.trim()) return
 
         setIsLoading(true)
         // Simulate API call
-        setTimeout(() => {
-            setSelectedClient("new-client-id")
-            setSelectedClientName(newClientName)
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+            console.error("Error getting user:", userError)
             setIsLoading(false)
+            return
+        }
+
+        const userId = userData?.user?.id
+
+        if (!userId) {
+            console.error("User not logged in or user ID not found.")
+            setIsLoading(false)
+            return
+        }
+
+        const { data, error } = await supabase
+            .from("clients")
+            .insert([{ name: newClientName, user_id: userId }]) // Add user_id
+            .select()
+
+        if (error) {
+            console.error("Error creating client:", error)
+            setIsLoading(false)
+            return
+        }
+
+        if (data && data.length > 0) {
+            const createdClient = data[0]
+            setSelectedClient(createdClient.id)
+            setSelectedClientName(createdClient.name)
             setIsCreatingNew(false)
             setCurrentStep("campaign")
-        }, 1000)
+            fetchClients() // Re-fetch clients to update the list
+        }
+
+        setIsLoading(false)
     }
 
-    const handleCreateCampaign = () => {
-        if (!newCampaignName.trim()) return
+    const handleCreateCampaign = async () => {
+        if (!newCampaignName.trim() || !selectedClient) return
 
         setIsLoading(true)
-        // Simulate API call
-        setTimeout(() => {
-            setSelectedCampaign("new-campaign-id")
-            setSelectedCampaignName(newCampaignName)
+
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+            console.error("Error getting user:", userError)
             setIsLoading(false)
+            return
+        }
+
+        const userId = userData?.user?.id
+
+        if (!userId) {
+            console.error("User not logged in or user ID not found.")
+            setIsLoading(false)
+            return
+        }
+
+        const { data, error } = await supabase
+            .from("campaigns")
+            .insert([
+                {
+                    name: newCampaignName,
+                    description: newCampaignDescription,
+                    client_id: selectedClient,
+                    user_id: userId,
+                },
+            ])
+            .select()
+
+        if (error) {
+            console.error("Error creating campaign:", error)
+            setIsLoading(false)
+            return
+        }
+
+        if (data && data.length > 0) {
+            const createdCampaign = data[0]
+            setSelectedCampaign(createdCampaign.id)
+            setSelectedCampaignName(createdCampaign.name)
             setIsCreatingNew(false)
             setCurrentStep("records")
-        }, 1000)
+            fetchCampaigns(selectedClient) // Re-fetch campaigns to update the list
+        }
+
+        setIsLoading(false)
     }
 
     // Update the handleFileUpload function to extract headers
@@ -335,7 +419,7 @@ const DatabaseDialog = () => {
                                             <CommandList>
                                                 <CommandEmpty>No client found.</CommandEmpty>
                                                 <CommandGroup>
-                                                    {mockClients.map((client) => (
+                                                    {clients.map((client) => (
                                                         <CommandItem
                                                             key={client.id}
                                                             value={client.name}
@@ -400,7 +484,7 @@ const DatabaseDialog = () => {
                                                 <CommandList>
                                                     <CommandEmpty>No campaign found.</CommandEmpty>
                                                     <CommandGroup>
-                                                        {(mockCampaigns[selectedClient] || []).map((campaign) => (
+                                                        {(campaigns[selectedClient] || []).map((campaign) => (
                                                             <CommandItem
                                                                 key={campaign.id}
                                                                 value={campaign.name}
@@ -761,15 +845,50 @@ const DatabaseDialog = () => {
         setUploadError("")
     }
 
-    const handleCreateRun = () => {
+    const handleCreateRun = async () => {
         setIsLoading(true)
 
-        // Simulate API call
-        setTimeout(() => {
-            setCreatedRunId("new-run-id")
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+            console.error("Error getting user:", userError)
             setIsLoading(false)
+            return
+        }
+
+        const userId = userData?.user?.id
+
+        if (!userId) {
+            console.error("User not logged in or user ID not found.")
+            setIsLoading(false)
+            return
+        }
+
+        const { data, error } = await supabase
+            .from("runs")
+            .insert([
+                {
+                    name: runName,
+                    description: runDescription,
+                    campaign_id: selectedCampaign,
+                    user_id: userId,
+                    records_count: records.length, // Add records_count
+                },
+            ])
+            .select()
+
+        if (error) {
+            console.error("Error creating run:", error)
+            setIsLoading(false)
+            return
+        }
+
+        if (data && data.length > 0) {
+            const createdRun = data[0]
+            setCreatedRunId(createdRun.id)
             setCurrentStep("complete")
-        }, 1000)
+        }
+
+        setIsLoading(false)
     }
 
     // Update the Button disabled condition in the return statement to include the mapping step

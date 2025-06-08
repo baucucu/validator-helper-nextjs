@@ -17,63 +17,7 @@ import Link from "next/link"
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils'; // Assuming cn utility for conditional classnames
 
-// Dummy data for demonstration
-const dummyClients = [
-    { id: 'client1', name: 'Acme Corp' },
-    { id: 'client2', name: 'Globex Inc.' },
-    { id: 'client3', name: 'Soylent Corp' },
-];
-
-const dummyCampaigns = {
-    client1: [
-        { id: 'campaign1_1', name: 'Summer Sale 2024', clientId: 'client1' },
-        { id: 'campaign1_2', name: 'Winter Campaign', clientId: 'client1' },
-    ],
-    client2: [
-        { id: 'campaign2_1', name: 'New Product Launch', clientId: 'client2' },
-    ],
-    client3: [
-        { id: 'campaign3_1', name: 'Q3 Marketing', clientId: 'client3' },
-        { id: 'campaign3_2', name: 'Holiday Special', clientId: 'client3' },
-        { id: 'campaign3_3', name: 'Spring Promo', clientId: 'client3' },
-    ],
-};
-
-const dummyRuns = {
-    campaign1_1: [
-        { id: 'run1_1_1', name: 'Email Blast 1', campaignId: 'campaign1_1' },
-        { id: 'run1_1_2', name: 'Social Media Push', campaignId: 'campaign1_1' },
-    ],
-    campaign1_2: [
-        { id: 'run1_2_1', name: 'Retargeting Ad', campaignId: 'campaign1_2' },
-    ],
-    campaign2_1: [
-        { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
-        { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'campaign2_1' },
-    ],
-    campaign3_1: [
-        { id: 'run3_1_1', name: 'SEO Audit', campaignId: 'campaign3_1' },
-    ],
-    campaign3_2: [
-        { id: 'run3_2_1', name: 'TV Commercial', campaignId: 'campaign3_2' },
-        { id: 'run3_2_2', name: 'Radio Ad', campaignId: 'campaign3_2' },
-    ],
-    campaign3_3: [
-        { id: 'run3_3_1', name: 'Online Banners', campaignId: 'campaign3_3' },
-    ],
-};
-
-// Dummy recent runs (last 5 updated)
-const dummyRecentRuns = [
-    { id: 'run1_1_2', name: 'Social Media Push', campaignId: 'campaign1_1' },
-    { id: 'run3_2_1', name: 'TV Commercial', campaignId: 'campaign3_2' },
-    { id: 'run2_1_1', name: 'Press Release', campaignId: 'campaign2_1' },
-    { id: 'run1_2_1', name: 'Retargeting Ad', campaignId: 'campaign1_2' },
-    { id: 'run3_3_1', name: 'Online Banners', campaignId: 'campaign3_3' },
-    { id: 'run2_1_2', name: 'Influencer Outreach', campaignId: 'campaign2_1' },
-];
-
-export function AppSidebar() {
+export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
     const searchParams = useSearchParams();
     const urlView = searchParams.get('view') || 'dashboard';
     const urlClientId = searchParams.get('clientId');
@@ -91,54 +35,54 @@ export function AppSidebar() {
 
     const selectedClient = React.useMemo(() => {
         if (urlClientId) {
-            return dummyClients.find(client => client.id === urlClientId);
+            return clients.find(client => client.id === urlClientId);
         } else if (urlCampaignId) {
-            for (const clientId in dummyCampaigns) {
-                const campaign = dummyCampaigns[clientId].find(c => c.id === urlCampaignId);
+            for (const clientId in campaigns) {
+                const campaign = campaigns[clientId].find(c => c.id === urlCampaignId);
                 if (campaign) {
-                    return dummyClients.find(client => client.id === campaign.clientId);
+                    return clients.find(client => client.id === campaign.clientId);
                 }
             }
         } else if (urlRunId) {
             let foundCampaign = null;
-            for (const campaignId in dummyRuns) {
-                const run = dummyRuns[campaignId].find(r => r.id === urlRunId);
+            for (const campaignId in runs) {
+                const run = runs[campaignId].find(r => r.id === urlRunId);
                 if (run) {
-                    for (const cId in dummyCampaigns) {
-                        const campaign = dummyCampaigns[cId].find(camp => camp.id === run.campaignId);
+                    for (const cId in campaigns) {
+                        const campaign = campaigns[cId].find(camp => camp.id === run.campaignId);
                         if (campaign) {
-                            return dummyClients.find(client => client.id === campaign.clientId);
+                            return clients.find(client => client.id === campaign.clientId);
                         }
                     }
                 }
             }
         }
         return null;
-    }, [urlClientId, urlCampaignId, urlRunId]);
+    }, [urlClientId, urlCampaignId, urlRunId, clients, campaigns, runs]);
 
     const selectedCampaign = React.useMemo(() => {
         if (urlCampaignId) {
             // Ensure the campaign belongs to the selectedClient if available
             if (selectedClient) {
-                return dummyCampaigns[selectedClient.id]?.find(c => c.id === urlCampaignId);
+                return campaigns[selectedClient.id]?.find(c => c.id === urlCampaignId);
             } else {
                 // If selectedClient is not yet set (e.g., direct run link), try to find campaign globally
-                for (const clientId in dummyCampaigns) {
-                    const campaign = dummyCampaigns[clientId].find(c => c.id === urlCampaignId);
+                for (const clientId in campaigns) {
+                    const campaign = campaigns[clientId].find(c => c.id === urlCampaignId);
                     if (campaign) return campaign;
                 }
             }
         } else if (urlRunId) {
-            for (const campaignId in dummyRuns) {
-                const run = dummyRuns[campaignId].find(r => r.id === urlRunId);
+            for (const campaignId in runs) {
+                const run = runs[campaignId].find(r => r.id === urlRunId);
                 if (run) {
                     // Ensure the campaign belongs to the selectedClient if available
                     if (selectedClient) {
-                        return dummyCampaigns[selectedClient.id]?.find(c => c.id === run.campaignId);
+                        return campaigns[selectedClient.id]?.find(c => c.id === run.campaignId);
                     } else {
                         // Fallback if selectedClient not ready: find campaign globally
-                        for (const cId in dummyCampaigns) {
-                            const campaign = dummyCampaigns[cId].find(camp => camp.id === run.campaignId);
+                        for (const cId in campaigns) {
+                            const campaign = campaigns[cId].find(camp => camp.id === run.campaignId);
                             if (campaign) return campaign;
                         }
                     }
@@ -146,14 +90,14 @@ export function AppSidebar() {
             }
         }
         return null;
-    }, [urlCampaignId, urlRunId, selectedClient]); // Depend on selectedClient as well
+    }, [urlCampaignId, urlRunId, selectedClient, clients, campaigns, runs]); // Depend on selectedClient as well
 
     const getCampaignsForClient = (clientId) => {
-        return dummyCampaigns[clientId] || [];
+        return campaigns[clientId] || [];
     };
 
     const getRunsForCampaign = (campaignId) => {
-        return dummyRuns[campaignId] || [];
+        return runs[campaignId] || [];
     };
 
     // Helper function to check if a link is active
@@ -215,7 +159,7 @@ export function AppSidebar() {
                     {/* Recent Runs Section */}
                     <SidebarGroup>
                         <SidebarGroupLabel>Recent Runs</SidebarGroupLabel>
-                        {dummyRecentRuns.map(run => (
+                        {recentRuns.length > 0 ? (recentRuns.map(run => (
                             <SidebarMenuButton asChild key={run.id}>
                                 <Link
                                     href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}
@@ -227,14 +171,16 @@ export function AppSidebar() {
                                     {run.name}
                                 </Link>
                             </SidebarMenuButton>
-                        ))}
+                        ))) : (
+                            <p className="p-2 text-sm text-gray-500 dark:text-gray-400">No recent runs</p>
+                        )}
                     </SidebarGroup>
                     <Separator />
 
                     {currentView === 'clients' && (
                         <SidebarGroup>
                             <SidebarGroupLabel>All Clients</SidebarGroupLabel>
-                            {dummyClients.map(client => (
+                            {clients.map(client => (
                                 <SidebarMenuButton asChild key={client.id}>
                                     <Link
                                         href={`/dashboard?view=client_campaigns&clientId=${client.id}`}
