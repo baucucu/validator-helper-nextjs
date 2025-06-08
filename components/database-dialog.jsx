@@ -72,15 +72,17 @@ const DatabaseDialog = () => {
         "First Name",
         "Last Name",
         "Email",
-        "Company Name",
         "Job Title",
         "LinkedIn Profile",
+        "Company Name",
+        "Website",
+        "Industry",
+        "Company Phone",
         "Company Address",
         "Company City",
         "Company State",
         "Company Zip Code",
-        "Company Country",
-
+        "Company Country"
     ])
 
     const [clients, setClients] = useState([]) // New state for clients
@@ -114,20 +116,20 @@ const DatabaseDialog = () => {
     }
 
     // Helper function for auto-mapping
-    const getAutoMappedField = (csvHeader) => {
-        const normalizedHeader = csvHeader.toLowerCase()
-        // Prioritize exact match
-        let matchedField = availableFields.find(
-            (field) => field.toLowerCase() === normalizedHeader,
-        )
-        // If no exact match, try partial match
-        if (!matchedField) {
-            matchedField = availableFields.find(
-                (field) => normalizedHeader.includes(field.toLowerCase()),
-            )
-        }
-        return matchedField || ""
-    }
+    // const getAutoMappedField = (csvHeader) => {
+    //     const normalizedHeader = csvHeader.toLowerCase()
+    //     // Prioritize exact match
+    //     let matchedField = availableFields.find(
+    //         (field) => field.toLowerCase() === normalizedHeader,
+    //     )
+    //     // If no exact match, try partial match
+    //     if (!matchedField) {
+    //         matchedField = availableFields.find(
+    //             (field) => normalizedHeader.includes(field.toLowerCase()),
+    //         )
+    //     }
+    //     return matchedField || ""
+    // }
 
     const handleOpenChange = (newOpen) => {
         setOpen(newOpen)
@@ -284,7 +286,7 @@ const DatabaseDialog = () => {
 
         // Parse CSV file
         const reader = new FileReader()
-        reader.onload = (e) => {
+        reader.onload = async (e) => { // Make onload async
             const text = e.target?.result
             const lines = text.split("\n").filter((line) => line.trim())
 
@@ -297,14 +299,6 @@ const DatabaseDialog = () => {
             const headers = lines[0].split(",").map((header) => header.trim().replace(/"/g, ""))
             setCsvHeaders(headers)
 
-            // Initialize field mappings with best-guess matches
-            const initialMappings = {}
-            headers.forEach((header) => {
-                // Try to find a matching field name (case-insensitive)
-                initialMappings[header] = getAutoMappedField(header)
-            })
-            setFieldMappings(initialMappings)
-
             // Skip header row and parse data into an array of objects
             const parsedRecords = lines.slice(1).map((line) => {
                 const values = line.split(",").map((col) => col.trim().replace(/"/g, ""))
@@ -315,6 +309,26 @@ const DatabaseDialog = () => {
                 return rowData
             }).filter(row => Object.values(row).some(value => value !== "")); // Filter out empty rows
             setRecords(parsedRecords)
+
+            // Call Edge Function for auto-mapping
+            setIsLoading(true)
+            const payload = { csvFields: headers, availableFields: availableFields }; // Define payload
+            console.log("Payload being sent to automap-fields (from handleFileUpload):", JSON.stringify(payload)); // NEW CONSOLE LOG
+            const { data: automapData, error: automapError } = await supabase.functions.invoke('automap-fields', {
+                body: payload
+            })
+            setIsLoading(false)
+
+            if (automapError) {
+                console.error("Error calling automap-fields function:", automapError)
+                setUploadError("Error during auto-mapping. Please map fields manually.")
+                setFieldMappings({}) // Initialize with empty mappings on error
+            }
+            // Only set field mappings if automapData.mapping is valid, otherwise it might be null or undefined.
+            if (automapData && automapData.mapping) {
+                console.log("Automap fields response:", automapData)
+                setFieldMappings(automapData.mapping || {}) // Set mappings from Edge Function
+            }
         }
 
         reader.onerror = () => {
@@ -673,13 +687,24 @@ const DatabaseDialog = () => {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => {
-                                        // Auto-map based on name similarity
-                                        const autoMappings = {}
-                                        csvHeaders.forEach((header) => {
-                                            autoMappings[header] = getAutoMappedField(header)
+                                    onClick={async () => {
+                                        setIsLoading(true)
+                                        const payload = { csvFields: csvHeaders, availableFields: availableFields };
+                                        console.log("Payload being sent to automap-fields (from Auto-Map button):", JSON.stringify(payload));
+                                        const { data: automapData, error: automapError } = await supabase.functions.invoke(
+                                            'automap-fields', {
+                                            body: payload
                                         })
-                                        setFieldMappings(autoMappings)
+                                        setIsLoading(false)
+
+                                        if (automapError) {
+                                            console.error("Error calling automap-fields function:", automapError)
+                                            alert("Error during auto-mapping. Please map fields manually.") // Keep this alert for now to help diagnose
+                                            setFieldMappings({}) // Initialize with empty mappings on error
+                                            return
+                                        }
+                                        console.log("Automap fields response:", automapData)
+                                        setFieldMappings(automapData.mapping || {})
                                     }}
                                 >
                                     Auto-Map
@@ -970,7 +995,7 @@ const DatabaseDialog = () => {
                             (currentStep === "client" && !selectedClient && (!isCreatingNew || !newClientName.trim())) ||
                             (currentStep === "campaign" && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
                             (currentStep === "records" && records.length === 0) ||
-                            (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0) ||
+                            (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
                             (currentStep === "run" && !runName.trim())
                         }
                     >
