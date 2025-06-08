@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SearchCommandDialog } from "@/components/search-command-dialog";
 import { SearchDialogProvider } from "@/components/search-dialog-context";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
           {children}
           <SearchCommandDialog />
         </SearchDialogProvider>
+        <Toaster />
       </body>
     </html>
   );

@@ -20,6 +20,22 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useSearchDialog } from "@/components/search-dialog-context";
+import { Dialog, DialogContent, DialogDescription } from "@/components/ui/dialog";
+import ClientForm from "@/components/client-form";
+import { useState, useEffect, useCallback } from 'react';
+import { DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { createClient } from "@/utils/supabase/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import CampaignForm from "@/components/campaign-form";
+import DatabaseDialog from "@/components/database-dialog";
 
 // Dummy data for mapping IDs to names
 const dummyClients = [
@@ -70,6 +86,66 @@ const dummyRuns = {
 export default function DashboardPage() {
     const searchParams = useSearchParams();
     const { setOpen: setSearchDialogOpen } = useSearchDialog();
+    const [isAddDataDialogOpen, setIsAddDataDialogOpen] = useState(false);
+    const [currentStep, setCurrentStep] = useState('clientSelection'); // New first step: 'clientSelection'
+    const [selectedClientId, setSelectedClientId] = useState(null);
+    const [selectedCampaignId, setSelectedCampaignId] = useState(null);
+    const [clients, setClients] = useState([]);
+    const [campaigns, setCampaigns] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [clientSelectionType, setClientSelectionType] = useState('existing'); // 'existing' or 'new'
+    const [campaignSelectionType, setCampaignSelectionType] = useState('existing'); // 'existing' or 'new'
+    const [newCampaignClientType, setNewCampaignClientType] = useState('existing'); // 'existing' or 'new'
+    const [selectedExistingClientIdForCampaign, setSelectedExistingClientIdForCampaign] = useState(null);
+    const [selectedExistingCampaignId, setSelectedExistingCampaignId] = useState(null);
+
+    const supabase = createClient();
+
+    const fetchClientsAndCampaigns = useCallback(async () => {
+        setLoading(true);
+        // Fetch clients
+        const { data: clientsData, error: clientsError } = await supabase
+            .from('clients')
+            .select('id, name');
+        if (clientsError) {
+            console.error("Error fetching clients:", clientsError);
+        } else {
+            setClients(clientsData || []);
+        }
+
+        // Fetch campaigns
+        const { data: campaignsData, error: campaignsError } = await supabase
+            .from('campaigns')
+            .select('id, name, client_id');
+        if (campaignsError) {
+            console.error("Error fetching campaigns:", campaignsError);
+        } else {
+            setCampaigns(campaignsData || []);
+        }
+        setLoading(false);
+    }, [supabase]);
+
+    useEffect(() => {
+        if (isAddDataDialogOpen) {
+            fetchClientsAndCampaigns();
+        }
+    }, [isAddDataDialogOpen, fetchClientsAndCampaigns]);
+
+    const handleNextStepFromClientSelection = () => {
+        if (clientSelectionType === 'existing') {
+            if (selectedClientId) {
+                setCurrentStep('campaignSelection');
+            } else {
+                console.error("Please select an existing client.");
+            }
+        } else if (clientSelectionType === 'new') {
+            // The ClientForm handles its own submission and calls onClientCreated,
+            // which will transition to 'campaignSelection'.
+            // So, no explicit action needed here for 'new' client type.
+            console.log("Creating new client, waiting for ClientForm submission.");
+        }
+    };
+
     const view = searchParams.get('view') || 'dashboard';
     const clientId = searchParams.get('clientId');
     const campaignId = searchParams.get('campaignId');
@@ -179,11 +255,16 @@ export default function DashboardPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Client</DropdownMenuItem>
-                                <DropdownMenuItem>Campaign</DropdownMenuItem>
-                                <DropdownMenuItem>Run</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => {
+                                    e.preventDefault(); // Prevent dropdown from closing immediately
+                                    // Open the DatabaseDialog directly
+                                    setIsAddDataDialogOpen(true);
+                                }}>Add Data</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+
+                        <DatabaseDialog open={isAddDataDialogOpen} onOpenChange={setIsAddDataDialogOpen} />
+
                     </div>
                 </header>
                 {mainContent}
