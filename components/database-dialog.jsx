@@ -61,6 +61,7 @@ const DatabaseDialog = () => {
     const [runName, setRunName] = useState("")
     const [runDescription, setRunDescription] = useState("")
     const [requirementsText, setRequirementsText] = useState("")
+    const [uploadComplete, setUploadComplete] = useState(false)
 
     const [uploadedFile, setUploadedFile] = useState(null)
     const [uploadError, setUploadError] = useState("")
@@ -150,6 +151,7 @@ const DatabaseDialog = () => {
             setRunName("")
             setRunDescription("")
             setRequirementsText("")
+            setUploadComplete(false)
             setUploadedFile(null)
             setUploadError("")
             setCreatedRunId("")
@@ -368,17 +370,19 @@ const DatabaseDialog = () => {
             }
         })
 
-        const { data, error } = await supabase.from("records").insert(recordsToInsert).select("id") // Select IDs
+        const { error } = await supabase.from("records").insert(recordsToInsert)
 
         if (error) {
             console.error("Error inserting records:", error)
             setIsLoading(false)
+            setUploadComplete(false) // Ensure it's false on error
             return
         }
 
         setIsLoading(false)
+        setUploadComplete(true) // Set to true on successful upload
         // setCurrentStep("run") // Removed: This step transition will be handled by handleSubmitRecords
-        return data.map(record => record.id) // Return array of new record IDs
+        // return data.map(record => record.id) // Removed: No longer returning IDs here
     }
 
     // Update the handleNext function to include the mapping step
@@ -754,12 +758,25 @@ const DatabaseDialog = () => {
             case "upload-status":
                 return (
                     <div className="flex flex-col items-center justify-center py-6">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-                        <h3 className="text-lg font-medium">Uploading Records...</h3>
-                        <p className="text-center text-muted-foreground mt-2">
-                            Your records are being uploaded to the database. This may take a moment.
-                        </p>
-                        {/* You can add a progress bar or more detailed status here later */}
+                        {uploadComplete ? (
+                            <>
+                                <div className="rounded-full bg-green-100 p-3 mb-4">
+                                    <Check className="h-8 w-8 text-green-600" />
+                                </div>
+                                <h3 className="text-lg font-medium">Upload Complete!</h3>
+                                <p className="text-center text-muted-foreground mt-2">
+                                    Successfully uploaded {records.length} records.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                                <h3 className="text-lg font-medium">Uploading Records...</h3>
+                                <p className="text-center text-muted-foreground mt-2">
+                                    Your records are being uploaded to the database. This may take a moment.
+                                </p>
+                            </>
+                        )}
                     </div>
                 )
 
@@ -1011,7 +1028,7 @@ const DatabaseDialog = () => {
                             (currentStep === "campaign" && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
                             (currentStep === "records" && records.length === 0) ||
                             (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
-                            (currentStep === "upload-status" && records.length === 0) ||
+                            (currentStep === "upload-status" && !uploadComplete) ||
                             (currentStep === "run" && !runName.trim())
                         }
                     >
