@@ -60,6 +60,7 @@ const DatabaseDialog = () => {
 
     const [runName, setRunName] = useState("")
     const [runDescription, setRunDescription] = useState("")
+    const [requirementsText, setRequirementsText] = useState("")
 
     const [uploadedFile, setUploadedFile] = useState(null)
     const [uploadError, setUploadError] = useState("")
@@ -148,6 +149,7 @@ const DatabaseDialog = () => {
             setNewRecord("")
             setRunName("")
             setRunDescription("")
+            setRequirementsText("")
             setUploadedFile(null)
             setUploadError("")
             setCreatedRunId("")
@@ -349,7 +351,7 @@ const DatabaseDialog = () => {
     }
 
     // Add a function to handle mapping submission
-    const handleSubmitMapping = async () => {
+    const handleRecordsUpload = async () => {
         setIsLoading(true)
 
         const recordsToInsert = records.map((record) => {
@@ -366,7 +368,7 @@ const DatabaseDialog = () => {
             }
         })
 
-        const { error } = await supabase.from("records").insert(recordsToInsert)
+        const { data, error } = await supabase.from("records").insert(recordsToInsert).select("id") // Select IDs
 
         if (error) {
             console.error("Error inserting records:", error)
@@ -375,16 +377,17 @@ const DatabaseDialog = () => {
         }
 
         setIsLoading(false)
-        setCurrentStep("run")
+        // setCurrentStep("run") // Removed: This step transition will be handled by handleSubmitRecords
+        return data.map(record => record.id) // Return array of new record IDs
     }
 
     // Update the handleNext function to include the mapping step
-    const handleNext = () => {
+    const handleNext = async () => { // Make async
         switch (currentStep) {
             case "client":
                 if (selectedClient || (isCreatingNew && newClientName.trim())) {
                     if (isCreatingNew) {
-                        handleCreateClient()
+                        await handleCreateClient()
                     } else {
                         setCurrentStep("campaign")
                     }
@@ -393,7 +396,7 @@ const DatabaseDialog = () => {
             case "campaign":
                 if (selectedCampaign || (isCreatingNew && newCampaignName.trim())) {
                     if (isCreatingNew) {
-                        handleCreateCampaign()
+                        await handleCreateCampaign()
                     } else {
                         setCurrentStep("records")
                     }
@@ -403,10 +406,14 @@ const DatabaseDialog = () => {
                 handleSubmitRecords()
                 break
             case "mapping":
-                handleSubmitMapping()
+                await handleRecordsUpload() // Await the upload
+                setCurrentStep("upload-status") // Transition to new upload status step
+                break
+            case "upload-status":
+                setCurrentStep("run") // Transition from upload-status to run
                 break
             case "run":
-                handleCreateRun()
+                await handleCreateRun() // Await run creation
                 break
             case "complete":
                 handleOpenChange(false)
@@ -426,8 +433,11 @@ const DatabaseDialog = () => {
             case "mapping":
                 setCurrentStep("records")
                 break
+            case "upload-status":
+                setCurrentStep("mapping") // Go back to mapping from upload-status
+                break
             case "run":
-                setCurrentStep("mapping")
+                setCurrentStep("upload-status") // Go back to upload-status from run
                 break
         }
     }
@@ -741,6 +751,18 @@ const DatabaseDialog = () => {
                     </>
                 )
 
+            case "upload-status":
+                return (
+                    <div className="flex flex-col items-center justify-center py-6">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                        <h3 className="text-lg font-medium">Uploading Records...</h3>
+                        <p className="text-center text-muted-foreground mt-2">
+                            Your records are being uploaded to the database. This may take a moment.
+                        </p>
+                        {/* You can add a progress bar or more detailed status here later */}
+                    </div>
+                )
+
             case "run":
                 return (
                     <>
@@ -772,6 +794,15 @@ const DatabaseDialog = () => {
                                     placeholder="Enter run description"
                                     value={runDescription}
                                     onChange={(e) => setRunDescription(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="requirements-text">Requirements Text (Optional)</Label>
+                                <Textarea
+                                    id="requirements-text"
+                                    placeholder="Enter any specific requirements or notes for this run."
+                                    value={requirementsText}
+                                    onChange={(e) => setRequirementsText(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -848,6 +879,8 @@ const DatabaseDialog = () => {
                 return "Upload Records"
             case "mapping":
                 return "Map CSV Columns"
+            case "upload-status":
+                return "Upload Status"
             case "run":
                 return "Create Run"
             case "complete":
@@ -866,6 +899,8 @@ const DatabaseDialog = () => {
                 return "Upload a CSV file with your records."
             case "mapping":
                 return "Map CSV columns to database fields."
+            case "upload-status":
+                return "Checking upload status..."
             case "run":
                 return "Create a run from the added records."
             case "complete":
@@ -883,7 +918,9 @@ const DatabaseDialog = () => {
             case "records":
                 return `Continue with ${records.length} Records`
             case "mapping":
-                return "Apply Mapping & Continue"
+                return "Upload Records"
+            case "upload-status":
+                return "Next"
             case "run":
                 return "Create Run"
             case "complete":
@@ -974,6 +1011,7 @@ const DatabaseDialog = () => {
                             (currentStep === "campaign" && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
                             (currentStep === "records" && records.length === 0) ||
                             (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
+                            (currentStep === "upload-status" && records.length === 0) ||
                             (currentStep === "run" && !runName.trim())
                         }
                     >
