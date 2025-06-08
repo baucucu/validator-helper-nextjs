@@ -410,14 +410,14 @@ const DatabaseDialog = () => {
                 handleSubmitRecords()
                 break
             case "mapping":
-                await handleRecordsUpload() // Await the upload
-                setCurrentStep("upload-status") // Transition to new upload status step
+                await handleRecordsUpload()
+                setCurrentStep("upload-status")
                 break
             case "upload-status":
-                setCurrentStep("run") // Transition from upload-status to run
+                // This step's transition is now handled by the "Create Run with Uploaded Records" button
                 break
             case "run":
-                await handleCreateRun() // Await run creation
+                await handleCreateRun()
                 break
             case "complete":
                 handleOpenChange(false)
@@ -767,6 +767,14 @@ const DatabaseDialog = () => {
                                 <p className="text-center text-muted-foreground mt-2">
                                     Successfully uploaded {records.length} records.
                                 </p>
+                                <div className="mt-6 w-full">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => setCurrentStep("run")}
+                                    >
+                                        Create Run with Uploaded Records
+                                    </Button>
+                                </div>
                             </>
                         ) : (
                             <>
@@ -1014,33 +1022,35 @@ const DatabaseDialog = () => {
                 </div>
 
                 <DialogFooter className="flex  flex-row items-center justify-end space-x-2">
-                    {currentStep !== "client" && currentStep !== "complete" && (
+                    {currentStep !== "client" && currentStep !== "complete" && currentStep !== "upload-status" && (
                         <Button variant="outline" onClick={handleBack} disabled={isLoading}>
                             Back
                         </Button>
                     )}
 
-                    <Button
-                        onClick={handleNext}
-                        disabled={
-                            isLoading ||
-                            (currentStep === "client" && !selectedClient && (!isCreatingNew || !newClientName.trim())) ||
-                            (currentStep === "campaign" && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
-                            (currentStep === "records" && records.length === 0) ||
-                            (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
-                            (currentStep === "upload-status" && !uploadComplete) ||
-                            (currentStep === "run" && !runName.trim())
-                        }
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processing...
-                            </>
-                        ) : (
-                            getNextButtonText()
-                        )}
-                    </Button>
+                    {currentStep !== "upload-status" && (
+                        <Button
+                            onClick={handleNext}
+                            disabled={
+                                isLoading ||
+                                (currentStep === "client" && !selectedClient && (!isCreatingNew || !newClientName.trim())) ||
+                                (currentStep === "campaign" && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
+                                (currentStep === "records" && records.length === 0) ||
+                                (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
+                                (currentStep === "run" && !runName.trim())
+                            }
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processing...
+                                </>
+                            ) : (
+                                getNextButtonText()
+                            )}
+                        </Button>
+                    )}
+
                 </DialogFooter>
             </DialogContent>
         </Dialog>
