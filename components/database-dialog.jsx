@@ -361,11 +361,6 @@ const DatabaseDialog = () => {
             case "campaign":
                 return (
                     <>
-                        <div className="mb-4">
-                            <Badge variant="outline" className="text-sm">
-                                Client: {selectedClientName}
-                            </Badge>
-                        </div>
                         <Tabs
                             defaultValue={isCreatingNew ? "create" : "select"}
                             onValueChange={(v) => setIsCreatingNew(v === "create")}
@@ -471,14 +466,10 @@ const DatabaseDialog = () => {
 
                             {uploadedFile && (
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <Label>Uploaded File</Label>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {records.length} records
-                                        </Badge>
-                                    </div>
+
                                     <div className="bg-muted p-3 rounded-md">
-                                        <div className="flex items-center justify-between">
+                                        <Label>Uploaded File</Label>
+                                        <div className="flex items-center justify-between mt-2">
                                             <div>
                                                 <p className="text-sm font-medium">{uploadedFile.name}</p>
                                                 <p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
@@ -494,16 +485,16 @@ const DatabaseDialog = () => {
 
                             {records.length > 0 && (
                                 <div className="space-y-2">
-                                    <Label>Preview (First 5 records)</Label>
+                                    <Label>Preview (First 1 record)</Label>
                                     <div className="max-h-[120px] overflow-y-auto space-y-1 bg-muted/50 p-2 rounded-md">
-                                        {records.slice(0, 5).map((record, index) => (
+                                        {records.slice(0, 1).map((record, index) => (
                                             <div key={index} className="text-xs p-1 bg-background rounded border">
                                                 {record}
                                             </div>
                                         ))}
-                                        {records.length > 5 && (
+                                        {records.length > 1 && (
                                             <div className="text-xs text-muted-foreground text-center py-1">
-                                                ... and {records.length - 5} more records
+                                                ... and {records.length - 1} more record{records.length - 1 > 1 ? "s" : ""}
                                             </div>
                                         )}
                                     </div>
