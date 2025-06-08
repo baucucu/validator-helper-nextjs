@@ -313,9 +313,8 @@ const DatabaseDialog = () => {
             // Call Edge Function for auto-mapping
             setIsLoading(true)
             const payload = { csvFields: headers, availableFields: availableFields }; // Define payload
-            console.log("Payload being sent to automap-fields (from handleFileUpload):", JSON.stringify(payload)); // NEW CONSOLE LOG
             const { data: automapData, error: automapError } = await supabase.functions.invoke('automap-fields', {
-                body: payload
+                body: payload,
             })
             setIsLoading(false)
 
@@ -326,7 +325,6 @@ const DatabaseDialog = () => {
             }
             // Only set field mappings if automapData.mapping is valid, otherwise it might be null or undefined.
             if (automapData && automapData.mapping) {
-                console.log("Automap fields response:", automapData)
                 setFieldMappings(automapData.mapping || {}) // Set mappings from Edge Function
             }
         }
@@ -353,20 +351,6 @@ const DatabaseDialog = () => {
     // Add a function to handle mapping submission
     const handleSubmitMapping = async () => {
         setIsLoading(true)
-        const { data: userData, error: userError } = await supabase.auth.getUser()
-        if (userError) {
-            console.error("Error getting user:", userError)
-            setIsLoading(false)
-            return
-        }
-
-        const userId = userData?.user?.id
-
-        if (!userId) {
-            console.error("User not logged in or user ID not found.")
-            setIsLoading(false)
-            return
-        }
 
         const recordsToInsert = records.map((record) => {
             const mappedData = {}
@@ -378,7 +362,6 @@ const DatabaseDialog = () => {
             }
             return {
                 campaign_id: selectedCampaign,
-                user_id: userId,
                 data: mappedData,
             }
         })
@@ -690,20 +673,17 @@ const DatabaseDialog = () => {
                                     onClick={async () => {
                                         setIsLoading(true)
                                         const payload = { csvFields: csvHeaders, availableFields: availableFields };
-                                        console.log("Payload being sent to automap-fields (from Auto-Map button):", JSON.stringify(payload));
-                                        const { data: automapData, error: automapError } = await supabase.functions.invoke(
-                                            'automap-fields', {
-                                            body: payload
+                                        const { data: automapData, error: automapError } = await supabase.functions.invoke('automap-fields', {
+                                            body: payload,
                                         })
                                         setIsLoading(false)
 
                                         if (automapError) {
                                             console.error("Error calling automap-fields function:", automapError)
-                                            alert("Error during auto-mapping. Please map fields manually.") // Keep this alert for now to help diagnose
+                                            setUploadError("Error during auto-mapping. Please map fields manually.")
                                             setFieldMappings({}) // Initialize with empty mappings on error
                                             return
                                         }
-                                        console.log("Automap fields response:", automapData)
                                         setFieldMappings(automapData.mapping || {})
                                     }}
                                 >
@@ -942,10 +922,8 @@ const DatabaseDialog = () => {
             .insert([
                 {
                     name: runName,
-                    description: runDescription,
                     campaign_id: selectedCampaign,
-                    user_id: userId,
-                    records_count: records.length, // Add records_count
+                    user_id: userId
                 },
             ])
             .select()
