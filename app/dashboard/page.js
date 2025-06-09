@@ -7,18 +7,18 @@ import {
 } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/components/app-sidebar"
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Search } from 'lucide-react';
+import { Search, FastForward } from 'lucide-react';
 import { useSearchDialog } from "@/components/search-dialog-context";
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import DatabaseDialog from "@/components/database-dialog";
+import AppLayout from "@/components/AppLayout";
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
     const { setOpen: setSearchDialogOpen } = useSearchDialog();
-    const [isAddDataDialogOpen, setIsAddDataDialogOpen] = useState(false);
+    const router = useRouter();
     const [clients, setClients] = useState([]);
     const [campaigns, setCampaigns] = useState({});
     const [runs, setRuns] = useState({});
@@ -176,26 +176,8 @@ export default function DashboardPage() {
     }
 
     return (
-        <SidebarProvider>
-            <AppSidebar clients={clients} campaigns={campaigns} runs={runs} recentRuns={recentRuns} />
-            <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-                    <h1 className="text-lg font-semibold md:text-xl">{pageTitle}</h1>
-                    <div className="ml-auto flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="md:size-9" onClick={() => {
-                            setSearchDialogOpen(true);
-                        }}>
-                            <Search className="h-4 w-4" />
-                        </Button>
-
-                        <DatabaseDialog open={isAddDataDialogOpen} onOpenChange={setIsAddDataDialogOpen} />
-
-                    </div>
-                </header>
-                {mainContent}
-            </SidebarInset>
-        </SidebarProvider>
+        <AppLayout clients={clients} campaigns={campaigns} runs={runs} recentRuns={recentRuns} pageTitle={pageTitle}>
+            {mainContent}
+        </AppLayout>
     );
 } 

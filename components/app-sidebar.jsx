@@ -38,7 +38,7 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
             return clients.find(client => client.id === urlClientId);
         } else if (urlCampaignId) {
             for (const clientId in campaigns) {
-                const campaign = campaigns[clientId].find(c => c.id === urlCampaignId);
+                const campaign = campaigns[clientId]?.find(c => c.id === urlCampaignId);
                 if (campaign) {
                     return clients.find(client => client.id === campaign.clientId);
                 }
@@ -46,10 +46,10 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
         } else if (urlRunId) {
             let foundCampaign = null;
             for (const campaignId in runs) {
-                const run = runs[campaignId].find(r => r.id === urlRunId);
+                const run = runs[campaignId]?.find(r => r.id === urlRunId);
                 if (run) {
                     for (const cId in campaigns) {
-                        const campaign = campaigns[cId].find(camp => camp.id === run.campaignId);
+                        const campaign = campaigns[cId]?.find(camp => camp.id === run.campaignId);
                         if (campaign) {
                             return clients.find(client => client.id === campaign.clientId);
                         }
@@ -68,13 +68,13 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
             } else {
                 // If selectedClient is not yet set (e.g., direct run link), try to find campaign globally
                 for (const clientId in campaigns) {
-                    const campaign = campaigns[clientId].find(c => c.id === urlCampaignId);
+                    const campaign = campaigns[clientId]?.find(c => c.id === urlCampaignId);
                     if (campaign) return campaign;
                 }
             }
         } else if (urlRunId) {
             for (const campaignId in runs) {
-                const run = runs[campaignId].find(r => r.id === urlRunId);
+                const run = runs[campaignId]?.find(r => r.id === urlRunId);
                 if (run) {
                     // Ensure the campaign belongs to the selectedClient if available
                     if (selectedClient) {
@@ -82,7 +82,7 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                     } else {
                         // Fallback if selectedClient not ready: find campaign globally
                         for (const cId in campaigns) {
-                            const campaign = campaigns[cId].find(camp => camp.id === run.campaignId);
+                            const campaign = campaigns[cId]?.find(camp => camp.id === run.campaignId);
                             if (campaign) return campaign;
                         }
                     }
@@ -210,8 +210,8 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                                 </Link>
                             </SidebarMenuButton>
                             <SidebarGroup>
-                                <SidebarGroupLabel>{selectedClient.name} Campaigns</SidebarGroupLabel>
-                                {getCampaignsForClient(selectedClient.id).map(campaign => (
+                                <SidebarGroupLabel>{selectedClient?.name} Campaigns</SidebarGroupLabel>
+                                {getCampaignsForClient(selectedClient?.id).map(campaign => (
                                     <SidebarMenuButton asChild key={campaign.id}>
                                         <Link
                                             href={`/dashboard?view=campaign_runs&campaignId=${campaign.id}`}
@@ -232,9 +232,9 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                         <>
                             <SidebarMenuButton asChild>
                                 <Link
-                                    href={`/dashboard?view=client_campaigns&clientId=${selectedClient.id}`}
+                                    href={`/dashboard?view=client_campaigns&clientId=${selectedClient?.id}`}
                                     className={cn(
-                                        getHighlightClass('client_campaigns', selectedClient.id, undefined, undefined),
+                                        getHighlightClass('client_campaigns', selectedClient?.id, undefined, undefined),
                                     )}
                                 >
                                     <ChevronLeft className="h-4 w-4" />
@@ -242,8 +242,8 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                                 </Link>
                             </SidebarMenuButton>
                             <SidebarGroup>
-                                <SidebarGroupLabel>{selectedCampaign.name} Runs</SidebarGroupLabel>
-                                {getRunsForCampaign(selectedCampaign.id).map(run => (
+                                <SidebarGroupLabel>{selectedCampaign?.name} Runs</SidebarGroupLabel>
+                                {getRunsForCampaign(selectedCampaign?.id).map(run => (
                                     <SidebarMenuButton key={run.id} asChild>
                                         <Link
                                             href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}
