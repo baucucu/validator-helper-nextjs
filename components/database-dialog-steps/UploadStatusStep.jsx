@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 const UploadStatusStep = ({
     uploadComplete,
     records,
-    setCurrentStep,
+    setStep,
 }) => {
     return (
         <div className="flex flex-col items-center justify-center py-6">
@@ -23,7 +23,7 @@ const UploadStatusStep = ({
                     <div className="mt-6 w-full">
                         <Button
                             className="w-full"
-                            onClick={() => setCurrentStep("run")}
+                            onClick={() => setStep(5)}
                         >
                             Create Run with Uploaded Records
                         </Button>

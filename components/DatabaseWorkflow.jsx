@@ -4,15 +4,25 @@ import React from "react"
 import { useState, useEffect } from "react"
 import { Loader2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+// import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs" // Removed unused import
+import { useForm } from 'react-hook-form';
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel
+} from '@/components/ui/form';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle
+} from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
 import { createClient } from "@/utils/supabase/client"
 import ClientStep from "./database-dialog-steps/ClientStep"
 import CampaignStep from "./database-dialog-steps/CampaignStep"
@@ -23,7 +33,10 @@ import RunCreationStep from "./database-dialog-steps/RunCreationStep"
 import CompletionStep from "./database-dialog-steps/CompletionStep"
 
 const DatabaseWorkflow = () => {
-    const [currentStep, setCurrentStep] = useState("client")
+    const stepNames = ["client", "campaign", "records", "field-mapping", "upload-status", "run-creation", "completion"];
+    const totalSteps = stepNames.length; // This will be 7
+
+    const [step, setStep] = useState(0) // Numerical step index
     const [isCreatingNew, setIsCreatingNew] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -74,6 +87,9 @@ const DatabaseWorkflow = () => {
 
     const [campaigns, setCampaigns] = useState({}) // New state for campaigns
 
+    const form = useForm();
+    const { handleSubmit, control, reset } = form;
+
     // Fetch clients from Supabase
     const fetchClients = async () => {
         setIsLoading(true)
@@ -101,7 +117,7 @@ const DatabaseWorkflow = () => {
 
     const resetWorkflow = () => {
         // Reset state
-        setCurrentStep("client")
+        setStep(0) // Reset to first step
         setIsCreatingNew(false)
         setSelectedClient(null)
         setSelectedClientName("")
@@ -121,6 +137,7 @@ const DatabaseWorkflow = () => {
         setCreatedRunId("")
         setCsvHeaders([])
         setFieldMappings({})
+        reset() // Reset react-hook-form
         fetchClients() // Fetch clients when component mounts or resets
     }
 
@@ -185,7 +202,7 @@ const DatabaseWorkflow = () => {
             setSelectedClient(createdClient.id)
             setSelectedClientName(createdClient.name)
             setIsCreatingNew(false)
-            setCurrentStep("campaign")
+            setStep(step + 1) // Move to next step (campaign)
             fetchClients() // Re-fetch clients to update the list
         }
 
@@ -235,7 +252,7 @@ const DatabaseWorkflow = () => {
             setSelectedCampaign(createdCampaign.id)
             setSelectedCampaignName(createdCampaign.name)
             setIsCreatingNew(false)
-            setCurrentStep("records")
+            setStep(step + 1) // Move to records
             fetchCampaigns(selectedClient) // Re-fetch campaigns to update the list
         }
 
@@ -334,7 +351,7 @@ const DatabaseWorkflow = () => {
 
     // Update the handleSubmitRecords function to go to mapping step instead of run
     const handleSubmitRecords = () => {
-        setCurrentStep("mapping")
+        setStep(step + 1)
     }
 
     // Add a function to handle mapping submission
@@ -372,39 +389,39 @@ const DatabaseWorkflow = () => {
 
     // Update the handleNext function to include the mapping step
     const handleNext = async () => { // Make async
-        switch (currentStep) {
-            case "client":
+        switch (step) {
+            case 0:
                 if (selectedClient || (isCreatingNew && newClientName.trim())) {
                     if (isCreatingNew) {
                         await handleCreateClient()
                     } else {
-                        setCurrentStep("campaign")
+                        setStep(step + 1)
                     }
                 }
                 break
-            case "campaign":
+            case 1:
                 if (selectedCampaign || (isCreatingNew && newCampaignName.trim())) {
                     if (isCreatingNew) {
                         await handleCreateCampaign()
                     } else {
-                        setCurrentStep("records")
+                        setStep(step + 1)
                     }
                 }
                 break
-            case "records":
+            case 2:
                 handleSubmitRecords()
                 break
-            case "mapping":
+            case 3:
                 await handleRecordsUpload()
-                setCurrentStep("upload-status")
+                setStep(step + 1)
                 break
-            case "upload-status":
+            case 4:
                 // This step's transition is now handled by the "Create Run with Uploaded Records" button
                 break
-            case "run":
+            case 5:
                 await handleCreateRun()
                 break
-            case "complete":
+            case 6:
                 resetWorkflow() // Use resetWorkflow instead of handleOpenChange(false)
                 break
         }
@@ -412,28 +429,28 @@ const DatabaseWorkflow = () => {
 
     // Update the handleBack function to include the mapping step
     const handleBack = () => {
-        switch (currentStep) {
-            case "campaign":
-                setCurrentStep("client")
+        switch (step) {
+            case 1:
+                setStep(step - 1)
                 break
-            case "records":
-                setCurrentStep("campaign")
+            case 2:
+                setStep(step - 1)
                 break
-            case "mapping":
-                setCurrentStep("records")
+            case 3:
+                setStep(step - 1)
                 break
-            case "upload-status":
-                setCurrentStep("mapping") // Go back to mapping from upload-status
+            case 4:
+                setStep(step - 1)
                 break
-            case "run":
-                setCurrentStep("upload-status") // Go back to upload-status from run
+            case 5:
+                setStep(step - 1)
                 break
         }
     }
 
     const renderStepContent = () => {
-        switch (currentStep) {
-            case "client":
+        switch (step) {
+            case 0:
                 return (
                     <ClientStep
                         isCreatingNew={isCreatingNew}
@@ -447,7 +464,7 @@ const DatabaseWorkflow = () => {
                     />
                 )
 
-            case "campaign":
+            case 1:
                 return (
                     <CampaignStep
                         selectedClientName={selectedClientName}
@@ -465,7 +482,7 @@ const DatabaseWorkflow = () => {
                     />
                 )
 
-            case "records":
+            case 2:
                 return (
                     <RecordsUploadStep
                         selectedClientName={selectedClientName}
@@ -479,7 +496,7 @@ const DatabaseWorkflow = () => {
                 )
 
             // Add a new case to renderStepContent for the mapping step
-            case "mapping":
+            case 3:
                 return (
                     <FieldMappingStep
                         selectedClientName={selectedClientName}
@@ -494,16 +511,16 @@ const DatabaseWorkflow = () => {
                     />
                 )
 
-            case "upload-status":
+            case 4:
                 return (
                     <UploadStatusStep
                         uploadComplete={uploadComplete}
                         records={records}
-                        setCurrentStep={setCurrentStep}
+                        setCurrentStep={setStep}
                     />
                 )
 
-            case "run":
+            case 5:
                 return (
                     <RunCreationStep
                         selectedClientName={selectedClientName}
@@ -518,7 +535,7 @@ const DatabaseWorkflow = () => {
                     />
                 )
 
-            case "complete":
+            case 6:
                 return (
                     <CompletionStep
                         runName={runName}
@@ -534,60 +551,60 @@ const DatabaseWorkflow = () => {
 
     // Update the getDialogTitle function to include the mapping step
     const getDialogTitle = () => {
-        switch (currentStep) {
-            case "client":
+        switch (step) {
+            case 0:
                 return "Select or Create Client"
-            case "campaign":
+            case 1:
                 return "Select or Create Campaign"
-            case "records":
+            case 2:
                 return "Upload Records"
-            case "mapping":
+            case 3:
                 return "Map CSV Columns"
-            case "upload-status":
+            case 4:
                 return "Upload Status"
-            case "run":
+            case 5:
                 return "Create Run"
-            case "complete":
+            case 6:
                 return "Operation Complete"
         }
     }
 
     // Update the getDialogDescription function to include the mapping step
     const getDialogDescription = () => {
-        switch (currentStep) {
-            case "client":
+        switch (step) {
+            case 0:
                 return "Choose an existing client or create a new one."
-            case "campaign":
+            case 1:
                 return "Choose an existing campaign or create a new one."
-            case "records":
+            case 2:
                 return "Upload a CSV file with your records."
-            case "mapping":
+            case 3:
                 return "Map CSV columns to database fields."
-            case "upload-status":
+            case 4:
                 return "Checking upload status..."
-            case "run":
+            case 5:
                 return "Create a run from the added records."
-            case "complete":
+            case 6:
                 return "Your data has been successfully added."
         }
     }
 
     // Update the getNextButtonText function to include the mapping step
     const getNextButtonText = () => {
-        switch (currentStep) {
-            case "client":
+        switch (step) {
+            case 0:
                 return isCreatingNew ? "Create & Continue" : "Continue"
-            case "campaign":
+            case 1:
                 return isCreatingNew ? "Create & Continue" : "Continue"
-            case "records":
+            case 2:
                 return `Continue with ${records.length} Records`
-            case "mapping":
+            case 3:
                 return "Upload Records"
-            case "upload-status":
+            case 4:
                 return "Next"
-            case "run":
+            case 5:
                 return "Create Run"
-            case "complete":
+            case 6:
                 return "Close"
         }
     }
@@ -596,10 +613,10 @@ const DatabaseWorkflow = () => {
         { id: "client", title: "Client" },
         { id: "campaign", title: "Campaign" },
         { id: "records", title: "Records" },
-        { id: "mapping", title: "Mapping" },
+        { id: "field-mapping", title: "Mapping" },
         { id: "upload-status", title: "Upload Status" },
-        { id: "run", title: "Create Run" },
-        { id: "complete", title: "Complete" },
+        { id: "run-creation", title: "Create Run" },
+        { id: "completion", title: "Complete" },
     ]
 
     const handleRemoveFile = () => {
@@ -648,72 +665,72 @@ const DatabaseWorkflow = () => {
         if (data && data.length > 0) {
             const createdRun = data[0]
             setCreatedRunId(createdRun.id)
-            setCurrentStep("complete")
+            setStep(step + 1)
         }
 
         setIsLoading(false)
     }
 
-    // Update the Button disabled condition in the return statement to include the mapping step
     return (
-        <div className="container mx-auto py-10">
-            <div className="max-w-[800px] mx-auto bg-white p-6 rounded-lg shadow-lg">
-                <Tabs value={currentStep} className="mb-6">
-                    <TabsList className="flex flex-wrap w-full justify-center gap-2">
-                        {getSteps().map((step, index) => (
-                            <TabsTrigger key={step.id} value={step.id} disabled={true} className="flex-1 px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                                {step.title}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                </Tabs>
-
-                <div>
-                    <h2 className="text-2xl font-bold mb-2">{getDialogTitle()}</h2>
-                    <p className="text-gray-600 mb-6">{getDialogDescription()}</p>
-                </div>
-
-                <div className="flex-1 overflow-y-auto py-4 px-1">
-                    <div className="pr-2">{renderStepContent()}</div>
-                </div>
-
-                <div className="flex flex-row items-center justify-end space-x-2 mt-6">
-                    {currentStep !== "client" && currentStep !== "complete" && currentStep !== "upload-status" && (
-                        <Button variant="outline" onClick={handleBack} disabled={isLoading}>
-                            Back
-                        </Button>
-                    )}
-
-                    {currentStep !== "complete" && (
-                        <Button
-                            onClick={handleNext}
-                            disabled={
-                                isLoading ||
-                                (currentStep === "client" && !selectedClient && (!isCreatingNew || !newClientName.trim())) ||
-                                (currentStep === "campaign" && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
-                                (currentStep === "records" && records.length === 0) ||
-                                (currentStep === "mapping" && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
-                                (currentStep === "run" && !runName.trim())
-                            }
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Processing...
-                                </>
-                            ) : (
-                                getNextButtonText()
+        <div className="space-y-4">
+            <div className="flex items-center justify-center mb-6">
+                {Array.from({ length: totalSteps }).map((_, index) => (
+                    <div key={index} className="flex items-center">
+                        <div
+                            className={cn(
+                                "w-4 h-4 rounded-full transition-all duration-300 ease-in-out",
+                                index <= step ? "bg-primary" : "bg-primary/30",
+                                index < step && "bg-primary"
                             )}
-                        </Button>
-                    )}
-                    {currentStep === "complete" && (
-                        <Button onClick={resetWorkflow}>
-                            Close
-                        </Button>
-                    )}
-
-                </div>
+                        />
+                        {index < totalSteps - 1 && (
+                            <div
+                                className={cn(
+                                    "w-8 h-0.5",
+                                    index < step ? "bg-primary" : "bg-primary/30"
+                                )}
+                            />
+                        )}
+                    </div>
+                ))}
             </div>
+            <Card className="shadow-sm">
+                <CardHeader>
+                    <CardTitle className="text-lg">{getDialogTitle()}</CardTitle>
+                    <CardDescription>Current step {step + 1} of {totalSteps}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form} onSubmit={handleSubmit(handleNext)}>
+                        {renderStepContent()}
+                        <div className="flex justify-between mt-6">
+                            <Button
+                                type="button"
+                                className="font-medium"
+                                size="sm"
+                                onClick={handleBack}
+                                disabled={step === 0 || isLoading}
+                            >
+                                Back
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                className="font-medium"
+                                disabled={
+                                    isLoading ||
+                                    (step === 0 && !selectedClient && (!isCreatingNew || !newClientName.trim())) ||
+                                    (step === 1 && !selectedCampaign && (!isCreatingNew || !newCampaignName.trim())) ||
+                                    (step === 2 && records.length === 0) ||
+                                    (step === 3 && Object.values(fieldMappings).filter(Boolean).length === 0 && records.length > 0 && !uploadedFile) ||
+                                    (step === 5 && !runName.trim())
+                                }
+                            >
+                                {getNextButtonText()}
+                            </Button>
+                        </div>
+                    </Form>
+                </CardContent>
+            </Card>
         </div>
     )
 }
