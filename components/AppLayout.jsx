@@ -28,7 +28,7 @@ const AppLayout = ({ children }) => {
             .from('clients')
             .select('id, name');
         if (clientsError) {
-            console.error("Error fetching clients:", clientsError);
+            console.error("Error fetching clients:", JSON.stringify(clientsError, null, 2));
         }
         setClients(clientsData || []);
 
@@ -37,7 +37,7 @@ const AppLayout = ({ children }) => {
             .from('campaigns')
             .select('id, name, client_id');
         if (campaignsError) {
-            console.error("Error fetching campaigns:", campaignsError);
+            console.error("Error fetching campaigns:", JSON.stringify(campaignsError, null, 2));
         }
 
         // Group campaigns by client_id
@@ -53,7 +53,7 @@ const AppLayout = ({ children }) => {
             .from('runs')
             .select('id, name, campaign_id, created_at');
         if (runsError) {
-            console.error("Error fetching runs:", runsError);
+            console.error("Error fetching runs:", JSON.stringify(runsError, null, 2));
         }
 
         // Group runs by campaign_id
@@ -71,7 +71,7 @@ const AppLayout = ({ children }) => {
             .order('created_at', { ascending: false })
             .limit(5);
         if (recentRunsError) {
-            console.error("Error fetching recent runs:", recentRunsError);
+            console.error("Error fetching recent runs:", JSON.stringify(recentRunsError, null, 2));
         }
         setRecentRuns(recentRunsData || []);
 
