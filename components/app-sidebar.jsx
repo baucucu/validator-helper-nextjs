@@ -17,6 +17,7 @@ import Link from "next/link"
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils'; // Assuming cn utility for conditional classnames
 import { useMemo } from 'react';
+import { Logo } from "./Logo";
 
 export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
     const searchParams = useSearchParams();
@@ -117,10 +118,7 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
     return (
         <ShadcnAppSidebar>
             <SidebarHeader className="h-16">
-                <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold">
-                    <Users className="h-6 w-6" />
-                    Validator
-                </Link>
+                <Logo name="Validator" icon={Users} />
             </SidebarHeader>
             <Separator />
             <SidebarContent>

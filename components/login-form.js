@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Logo } from "./Logo"
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }),
@@ -68,7 +69,7 @@ export default function LoginForm({ signInAction }) {
                             <polyline points="22 4 12 14.01 9 11.01" />
                         </svg>
                     </div>
-                    <CardTitle className="text-2xl font-bold">Validator Login</CardTitle>
+                    <Logo name="Validator Login" asLink={false} className="text-2xl font-bold justify-center" />
                     <CardDescription>Enter your email and password to access your account</CardDescription>
                 </CardHeader>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
