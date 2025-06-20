@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
     Breadcrumb,
@@ -14,32 +14,43 @@ import {
 
 export default function Breadcrumbs({ clients, campaigns, runs }) {
     const pathname = usePathname()
-    const segments = pathname.split('/').filter(Boolean)
-
+    const searchParams = useSearchParams()
     const breadcrumbItems = []
 
-    if (segments[0] === 'clients' && segments.length >= 2) {
-        const clientId = segments[1]
-        const client = clients?.find((c) => c.id == clientId)
-        breadcrumbItems.push({
-            label: client?.name || 'Client',
-            href: `/clients/${clientId}`,
-        })
+    const clientId = searchParams.get('clientId')
+    const campaignId = searchParams.get('campaignId')
+    const runId = searchParams.get('runId')
+    const view = searchParams.get('view')
 
-        if (segments[2] === 'campaigns' && segments.length >= 4) {
-            const campaignId = segments[3]
-            const campaign = campaigns?.[clientId]?.find((c) => c.id == campaignId)
-            breadcrumbItems.push({
-                label: campaign?.name || 'Campaign',
-                href: `/clients/${clientId}/campaigns/${campaignId}`,
-            })
-
-            if (segments[4] === 'runs' && segments.length >= 6) {
-                const runId = segments[5]
-                const run = runs?.[campaignId]?.find((r) => r.id == runId)
+    if (view) {
+        if (clientId) {
+            const client = clients?.find((c) => c.id == clientId)
+            if (client) {
                 breadcrumbItems.push({
-                    label: run?.name || 'Run',
-                    href: `/clients/${clientId}/campaigns/${campaignId}/runs/${runId}`,
+                    label: client.name,
+                    href: `/dashboard?view=client_campaigns&clientId=${clientId}`,
+                })
+            }
+        }
+
+        if (campaignId) {
+            const clientCampaigns = campaigns?.[clientId]
+            const campaign = clientCampaigns?.find((c) => c.id == campaignId)
+            if (campaign) {
+                breadcrumbItems.push({
+                    label: campaign.name,
+                    href: `/dashboard?view=campaign_runs&clientId=${clientId}&campaignId=${campaignId}`,
+                })
+            }
+        }
+
+        if (runId) {
+            const campaignRuns = runs?.[campaignId]
+            const run = campaignRuns?.find((r) => r.id == runId)
+            if (run) {
+                breadcrumbItems.push({
+                    label: run.name,
+                    href: `/dashboard?view=campaign_runs&clientId=${clientId}&campaignId=${campaignId}&runId=${runId}`,
                 })
             }
         }
