@@ -16,6 +16,7 @@ import { Settings, Users, Layers, Play, ChevronLeft, Plus, Search, Store, Target
 import Link from "next/link"
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils'; // Assuming cn utility for conditional classnames
+import { useMemo } from 'react';
 
 export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
     const searchParams = useSearchParams();
@@ -24,73 +25,41 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
     const urlCampaignId = searchParams.get('campaignId');
     const urlRunId = searchParams.get('runId');
 
-    // Derive currentView, selectedClient, and selectedCampaign directly from URL
     const currentView = React.useMemo(() => {
-        if (urlRunId) return 'campaign_runs';
-        if (urlCampaignId) return 'campaign_runs'; // Campaign view also shows runs
+        if (urlRunId || urlCampaignId) return 'campaign_runs';
         if (urlClientId) return 'client_campaigns';
-        if (urlView === 'clients') return 'clients';
-        return 'clients'; // Default to clients view if no specific view is in URL
-    }, [urlView, urlClientId, urlCampaignId, urlRunId]);
+        return 'clients';
+    }, [urlClientId, urlCampaignId, urlRunId]);
 
     const selectedClient = React.useMemo(() => {
         if (urlClientId) {
             return clients.find(client => client.id === urlClientId);
-        } else if (urlCampaignId) {
+        }
+        return null;
+    }, [urlClientId, clients]);
+
+    const selectedCampaign = useMemo(() => {
+        if (urlCampaignId && urlClientId && campaigns && campaigns[urlClientId]) {
+            return campaigns[urlClientId].find(c => c.id === urlCampaignId);
+        } else if (urlCampaignId) { // Fallback for when clientId is not in URL
+            if (!campaigns) return null;
             for (const clientId in campaigns) {
                 const campaign = campaigns[clientId]?.find(c => c.id === urlCampaignId);
-                if (campaign) {
-                    return clients.find(client => client.id === campaign.clientId);
-                }
-            }
-        } else if (urlRunId) {
-            let foundCampaign = null;
-            for (const campaignId in runs) {
-                const run = runs[campaignId]?.find(r => r.id === urlRunId);
-                if (run) {
-                    for (const cId in campaigns) {
-                        const campaign = campaigns[cId]?.find(camp => camp.id === run.campaignId);
-                        if (campaign) {
-                            return clients.find(client => client.id === campaign.clientId);
-                        }
-                    }
-                }
+                if (campaign) return campaign;
             }
         }
         return null;
-    }, [urlClientId, urlCampaignId, urlRunId, clients, campaigns, runs]);
+    }, [urlCampaignId, urlClientId, campaigns]);
 
-    const selectedCampaign = React.useMemo(() => {
-        if (urlCampaignId) {
-            // Ensure the campaign belongs to the selectedClient if available
-            if (selectedClient) {
-                return campaigns[selectedClient.id]?.find(c => c.id === urlCampaignId);
-            } else {
-                // If selectedClient is not yet set (e.g., direct run link), try to find campaign globally
-                for (const clientId in campaigns) {
-                    const campaign = campaigns[clientId]?.find(c => c.id === urlCampaignId);
-                    if (campaign) return campaign;
-                }
-            }
-        } else if (urlRunId) {
-            for (const campaignId in runs) {
-                const run = runs[campaignId]?.find(r => r.id === urlRunId);
-                if (run) {
-                    // Ensure the campaign belongs to the selectedClient if available
-                    if (selectedClient) {
-                        return campaigns[selectedClient.id]?.find(c => c.id === run.campaignId);
-                    } else {
-                        // Fallback if selectedClient not ready: find campaign globally
-                        for (const cId in campaigns) {
-                            const campaign = campaigns[cId]?.find(camp => camp.id === run.campaignId);
-                            if (campaign) return campaign;
-                        }
-                    }
-                }
+    const getClientIdForCampaign = (campaignId) => {
+        if (!campaigns) return null;
+        for (const clientId in campaigns) {
+            if (campaigns[clientId] && campaigns[clientId].some(c => c.id === campaignId)) {
+                return clientId;
             }
         }
         return null;
-    }, [urlCampaignId, urlRunId, selectedClient, clients, campaigns, runs]); // Depend on selectedClient as well
+    };
 
     const getCampaignsForClient = (clientId) => {
         return campaigns[clientId] || [];
@@ -159,19 +128,22 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                     {/* Recent Runs Section */}
                     <SidebarGroup>
                         <SidebarGroupLabel>Recent Runs</SidebarGroupLabel>
-                        {recentRuns.length > 0 ? (recentRuns.map(run => (
-                            <SidebarMenuButton asChild key={run.id}>
-                                <Link
-                                    href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}
-                                    className={cn(
-                                        getHighlightClass('campaign_runs', undefined, run.campaignId, run.id),
-                                    )}
-                                >
-                                    <Play className="h-4 w-4" />
-                                    {run.name}
-                                </Link>
-                            </SidebarMenuButton>
-                        ))) : (
+                        {recentRuns.length > 0 ? (recentRuns.map(run => {
+                            const clientId = getClientIdForCampaign(run.campaignId);
+                            return (
+                                <SidebarMenuButton asChild key={run.id}>
+                                    <Link
+                                        href={`/dashboard?view=campaign_runs&clientId=${clientId}&campaignId=${run.campaignId}&runId=${run.id}`}
+                                        className={cn(
+                                            getHighlightClass('campaign_runs', clientId, run.campaignId, run.id),
+                                        )}
+                                    >
+                                        <Play className="h-4 w-4" />
+                                        {run.name}
+                                    </Link>
+                                </SidebarMenuButton>
+                            )
+                        })) : (
                             <p className="p-2 text-sm text-gray-500 dark:text-gray-400">No recent runs</p>
                         )}
                     </SidebarGroup>
@@ -214,9 +186,9 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                                 {getCampaignsForClient(selectedClient?.id).map(campaign => (
                                     <SidebarMenuButton asChild key={campaign.id}>
                                         <Link
-                                            href={`/dashboard?view=campaign_runs&campaignId=${campaign.id}`}
+                                            href={`/dashboard?view=campaign_runs&clientId=${selectedClient.id}&campaignId=${campaign.id}`}
                                             className={cn(
-                                                getHighlightClass('campaign_runs', undefined, campaign.id, undefined),
+                                                getHighlightClass('campaign_runs', selectedClient.id, campaign.id, undefined),
                                             )}
                                         >
                                             <Target className="h-4 w-4" />
@@ -246,9 +218,9 @@ export function AppSidebar({ clients, campaigns, runs, recentRuns }) {
                                 {getRunsForCampaign(selectedCampaign?.id).map(run => (
                                     <SidebarMenuButton key={run.id} asChild>
                                         <Link
-                                            href={`/dashboard?view=campaign_runs&campaignId=${run.campaignId}&runId=${run.id}`}
+                                            href={`/dashboard?view=campaign_runs&clientId=${selectedClient?.id}&campaignId=${run.campaignId}&runId=${run.id}`}
                                             className={cn(
-                                                getHighlightClass('campaign_runs', undefined, run.campaignId, run.id),
+                                                getHighlightClass('campaign_runs', selectedClient?.id, run.campaignId, run.id),
                                             )}
                                         >
                                             <Play className="h-4 w-4" />
