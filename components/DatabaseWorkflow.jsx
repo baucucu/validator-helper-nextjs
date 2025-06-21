@@ -282,6 +282,7 @@ const DatabaseWorkflow = () => {
                 setUploadError("CSV file is empty")
                 return
             }
+            // test
 
             // Extract headers from first line
             const headers = lines[0].split(",").map((header) => header.trim().replace(/"/g, ""))
